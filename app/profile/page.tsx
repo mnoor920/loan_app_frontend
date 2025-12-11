@@ -302,23 +302,23 @@ const ProfilePage = () => {
               My Profile
             </h1>
             <div className="flex items-center gap-2 text-slate-500 text-sm">
-                <User className="w-4 h-4" />
-                <p>Manage your personal information and documents</p>
+              <User className="w-4 h-4" />
+              <p>Manage your personal information and documents</p>
             </div>
           </div>
-        
+
           <div className="flex items-center gap-3">
             {/* Cache and connection status */}
-             <div className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 bg-slate-100 rounded-full">
-                {isFromCache ? (
-                    <span className="text-slate-500 flex items-center gap-1">
-                    <Wifi className="w-3 h-3" /> Cached
-                    </span>
-                ) : (
-                    <span className="text-emerald-600 flex items-center gap-1">
-                    <Wifi className="w-3 h-3" /> Live
-                    </span>
-                )}
+            <div className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 bg-slate-100 rounded-full">
+              {isFromCache ? (
+                <span className="text-slate-500 flex items-center gap-1">
+                  <Wifi className="w-3 h-3" /> Cached
+                </span>
+              ) : (
+                <span className="text-emerald-600 flex items-center gap-1">
+                  <Wifi className="w-3 h-3" /> Live
+                </span>
+              )}
             </div>
 
             <button
@@ -337,10 +337,10 @@ const ProfilePage = () => {
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
             <div>
-                 <h2 className="text-lg font-bold text-slate-900 mb-1">Account Status</h2>
-                 <p className="text-slate-500 text-sm">Current verification level</p>
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Account Status</h2>
+              <p className="text-slate-500 text-sm">Current verification level</p>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <span
                 className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold border ${getStatusColor(
@@ -521,26 +521,26 @@ const ProfilePage = () => {
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Full Name</label>
-                        <p className="text-slate-900 font-medium">{profile?.fullName || "Not provided"}</p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Gender</label>
-                        <p className="text-slate-900 font-medium capitalize">{profile?.gender || "Not provided"}</p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Date of Birth</label>
-                        <p className="text-slate-900 font-medium">{profile?.dateOfBirth ? formatDate(profile.dateOfBirth) : "Not provided"}</p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Marital Status</label>
-                        <p className="text-slate-900 font-medium capitalize">{profile?.maritalStatus || "Not provided"}</p>
-                    </div>
-                     <div className="col-span-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Nationality</label>
-                        <p className="text-slate-900 font-medium">{profile?.nationality || "Not provided"}</p>
-                    </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase">Full Name</label>
+                    <p className="text-slate-900 font-medium">{profile?.fullName || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase">Gender</label>
+                    <p className="text-slate-900 font-medium capitalize">{profile?.gender || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase">Date of Birth</label>
+                    <p className="text-slate-900 font-medium">{profile?.dateOfBirth ? formatDate(profile.dateOfBirth) : "Not provided"}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase">Marital Status</label>
+                    <p className="text-slate-900 font-medium capitalize">{profile?.maritalStatus || "Not provided"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase">Nationality</label>
+                    <p className="text-slate-900 font-medium">{profile?.nationality || "Not provided"}</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -558,20 +558,20 @@ const ProfilePage = () => {
             </div>
 
             <div className="space-y-4">
-               <div className="grid grid-cols-1 gap-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Country</label>
-                        <p className="text-slate-900 font-medium">{profile?.residingCountry || "Not provided"}</p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">State / Province</label>
-                        <p className="text-slate-900 font-medium">{profile?.stateRegionProvince || "Not provided"}</p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Town / City</label>
-                        <p className="text-slate-900 font-medium">{profile?.townCity || "Not provided"}</p>
-                    </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Country</label>
+                  <p className="text-slate-900 font-medium">{profile?.residingCountry || "Not provided"}</p>
                 </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">State / Province</label>
+                  <p className="text-slate-900 font-medium">{profile?.stateRegionProvince || "Not provided"}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Town / City</label>
+                  <p className="text-slate-900 font-medium">{profile?.townCity || "Not provided"}</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -587,16 +587,16 @@ const ProfilePage = () => {
             </div>
 
             <div className="space-y-4">
-                 <div className="grid grid-cols-1 gap-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">ID Type</label>
-                        <p className="text-slate-900 font-medium">{profile?.idType || "Not provided"}</p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">ID Number</label>
-                        <p className="text-slate-900 font-medium">{profile?.idNumber || "Not provided"}</p>
-                    </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">ID Type</label>
+                  <p className="text-slate-900 font-medium">{profile?.idType || "Not provided"}</p>
                 </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">ID Number</label>
+                  <p className="text-slate-900 font-medium">{profile?.idNumber || "Not provided"}</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -612,24 +612,24 @@ const ProfilePage = () => {
             </div>
 
             <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Bank Name</label>
-                        <p className="text-slate-900 font-medium">{profile?.bankName || "Not provided"}</p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Account Number</label>
-                        <p className="text-slate-900 font-medium tracking-wider">
-                           {profile?.accountNumber
-                            ? `**** ${profile.accountNumber.slice(-4)}`
-                            : "Not provided"}
-                        </p>
-                    </div>
-                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Account Holder</label>
-                        <p className="text-slate-900 font-medium">{profile?.accountHolderName || "Not provided"}</p>
-                    </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Bank Name</label>
+                  <p className="text-slate-900 font-medium">{profile?.bankName || "Not provided"}</p>
                 </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Account Number</label>
+                  <p className="text-slate-900 font-medium tracking-wider">
+                    {profile?.accountNumber
+                      ? `**** ${profile.accountNumber.slice(-4)}`
+                      : "Not provided"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Account Holder</label>
+                  <p className="text-slate-900 font-medium">{profile?.accountHolderName || "Not provided"}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -647,9 +647,9 @@ const ProfilePage = () => {
             </div>
 
             <div className="border-2 border-slate-200 rounded-xl p-4 bg-slate-50/30">
-              <img 
-                src={profile.signatureData} 
-                alt="Digital Signature" 
+              <img
+                src={profile.signatureData}
+                alt="Digital Signature"
                 className="max-h-32 mx-auto"
               />
             </div>
@@ -701,12 +701,12 @@ const ProfilePage = () => {
               </h3>
             </div>
             {!isEditing && (
-                <button
+              <button
                 onClick={() => setEditingSection("documents")}
                 className="text-emerald-600 hover:text-emerald-700 text-sm font-semibold hover:bg-emerald-50 px-3 py-1 rounded-lg transition-colors"
-                >
+              >
                 Add / Manage
-                </button>
+              </button>
             )}
           </div>
 
@@ -743,16 +743,16 @@ const ProfilePage = () => {
                     <span>
                       {(document as any).fileSize || (document as any).file_size
                         ? `${Math.round(
-                            ((document as any).fileSize ??
-                              (document as any).file_size) / 1024
-                          )} KB`
+                          ((document as any).fileSize ??
+                            (document as any).file_size) / 1024
+                        )} KB`
                         : "Unknown size"}
                     </span>
                     <span>
                       {formatDate(
                         (document as any).createdAt ??
-                          (document as any).created_at ??
-                          ""
+                        (document as any).created_at ??
+                        ""
                       )}
                     </span>
                   </div>
@@ -802,14 +802,14 @@ const ProfilePage = () => {
                       {label}
                     </label>
                     <div className="relative">
-                        <input
+                      <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
+                          const file = e.target.files?.[0];
+                          if (file) {
                             handleFileUpload(file, type);
-                            }
+                          }
                         }}
                         className="w-full text-sm text-slate-500
                             file:mr-4 file:py-2 file:px-4
@@ -819,7 +819,7 @@ const ProfilePage = () => {
                             hover:file:bg-emerald-100
                             cursor-pointer
                         "
-                        />
+                      />
                     </div>
                     {documentsByType[type] &&
                       documentsByType[type].length > 0 && (
@@ -870,7 +870,13 @@ const ProfilePage = () => {
       <DocumentViewerModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        document={selectedDocument}
+        document={selectedDocument ? {
+          id: selectedDocument.id,
+          document_type: selectedDocument.document_type || selectedDocument.documentType || 'unknown',
+          original_filename: selectedDocument.original_filename || selectedDocument.originalFilename,
+          file_size: selectedDocument.file_size || selectedDocument.fileSize,
+          mime_type: selectedDocument.mime_type || selectedDocument.mimeType,
+        } : null}
       />
     </DashboardLayout>
   );
