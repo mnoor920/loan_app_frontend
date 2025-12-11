@@ -97,8 +97,7 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
+  // Use relative URLs to go through Next.js API routes (ensures cookies are sent)
   // Load data from database first, then localStorage as fallback
   useEffect(() => {
     const loadData = async () => {
@@ -124,7 +123,7 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
         }
 
         // First try to load from database
-        const response = await fetch(`${API_URL}/api/activation/profile`, {
+        const response = await fetch('/api/activation/profile', {
           credentials: 'include',
         });
 
@@ -319,7 +318,7 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
 
       console.log(`💾 Saving step ${step} to database:`, dataToSave);
 
-      const response = await fetch(`${API_URL}/api/activation/profile`, {
+      const response = await fetch('/api/activation/profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +361,8 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
           formData.append('file', file);
           formData.append('documentType', type);
 
-          const response = await fetch(`${API_URL}/api/documents/upload`, {
+          // Use relative URL to go through Next.js API route (ensures cookies are sent)
+          const response = await fetch('/api/activation/documents/upload', {
             method: 'POST',
             credentials: 'include',
             body: formData,
