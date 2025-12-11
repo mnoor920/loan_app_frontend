@@ -28,11 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
+  // Use relative URLs for auth routes so they go through Next.js API routes
+  // This ensures cookies are set on the same domain (critical for Vercel)
   const checkAuth = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/me`, {
+      const response = await fetch('/api/auth/me', {
         credentials: 'include',
       })
 
@@ -49,14 +49,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('AuthContext: Making login request to:', `${API_URL}/api/auth/signin`);
-      const response = await fetch(`${API_URL}/api/auth/signin`, {
+      console.log('AuthContext: Making login request to: /api/auth/signin');
+      const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ identifier: email, password }),
+        body: JSON.stringify({ email, password }),
       })
 
       console.log('AuthContext: Response status:', response.status);
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = async (formData: any) => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/signup`, {
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
       setUser(null)
     } catch (error) {
       console.error('Logout failed:', error)

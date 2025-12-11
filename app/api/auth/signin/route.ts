@@ -32,12 +32,15 @@ export async function POST(request: NextRequest) {
       redirectTo: user.role === 'superadmin' ? '/admin/dashboard' : '/userdashboard'
     })
 
+    // Set cookie with proper settings for production
+    const isProduction = process.env.NODE_ENV === 'production'
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // true for HTTPS (Vercel), false for localhost
+      secure: isProduction, // true for HTTPS (Vercel), false for localhost
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      // Don't set domain - let it default to current domain (important for Vercel)
     })
 
     console.log('Cookie set on response')
