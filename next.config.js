@@ -1,14 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
+    // Get the backend URL from environment variable, fallback to new backend
+    const backendUrl = process.env.BACKEND_URL || 'http://loanapp.alwaysdata.net';
+
     return [
-      // Note: Next.js API routes in /app/api take precedence over rewrites
-      // So /app/api/auth/signin/route.ts will handle /api/auth/signin
-      // Only routes that don't exist in Next.js will be rewritten to external backend
+      // IMPORTANT: Next.js API routes in /app/api should take precedence
+      // However, to be safe, we exclude routes that exist in Next.js
+      // Only rewrite routes that don't exist in Next.js to external backend
       {
         source: '/api/:path*',
-        // destination: 'http://localhost:4000/api/:path*',
-        destination: 'https://loan-app-backend-9c31.onrender.com/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
+        // This rewrite will only apply if the route doesn't exist in Next.js
+        // Next.js API routes in /app/api take precedence
       },
     ];
   },

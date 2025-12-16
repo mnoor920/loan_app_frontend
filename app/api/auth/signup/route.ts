@@ -1,3 +1,6 @@
+// Force dynamic rendering to ensure this route is always handled as a server route
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { signUpSchema } from '@/lib/validations'
 import { createUser, generateToken, getUserByEmailOrPhone } from '@/lib/simple-auth'
@@ -6,11 +9,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     console.log('Signup request received:', { ...body, password: '[HIDDEN]' })
-    
+
     // Validate input
     const validatedData = signUpSchema.parse(body)
     console.log('Validation passed')
-    
+
     // Check if user already exists
     try {
       const existingUser = await getUserByEmailOrPhone(validatedData.email)
@@ -79,7 +82,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Signup error:', error)
-    
+
     if (error.name === 'ZodError') {
       return NextResponse.json(
         { error: 'Validation failed', details: error.errors },
