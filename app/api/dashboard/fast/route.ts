@@ -10,11 +10,12 @@ const noCacheHeaders = {
   'Expires': '0',
 };
 
+import { getTokenFromRequest } from '@/lib/auth-utils';
+
 export async function GET(request: NextRequest) {
   try {
-    // Get token from cookies
-    const cookieStore = request.cookies;
-    const token = cookieStore.get('auth-token')?.value;
+    // Get token from Authorization header or cookie (fallback)
+    const token = getTokenFromRequest(request);
 
     if (!token) {
       return NextResponse.json(

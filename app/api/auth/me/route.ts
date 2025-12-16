@@ -1,26 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
 import { getUserByEmailOrPhone } from '@/lib/simple-auth'
-
-interface JWTPayload {
-  userId: string
-  email: string
-  role: string
-}
+import { getTokenFromRequest, verifyToken, type JWTPayload } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from cookies
-    const token = request.cookies.get('auth-token')?.value
+    // Get token from Authorization header or cookie (fallback)
+    const token = getTokenFromRequest(request)
 
     // Debug logging
     console.log('=== /api/auth/me Debug ===')
+    console.log('Authorization header:', request.headers.get('authorization')?.substring(0, 30) + '...')
     console.log('All cookies:', request.cookies.getAll())
     console.log('Auth token present:', !!token)
-    console.log('Token value (first 20 chars):', token?.substring(0, 20) + '...')
 
     if (!token) {
-      console.log('No token found in cookies!')
+      console.log('No token found in Authorization header or cookies!')
       return NextResponse.json(
         { error: 'No authentication token found' },
         { status: 401 }
@@ -28,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload
+    const decoded = verifyToken(token)
 
     // Handle super admin
     if (decoded.userId === 'superadmin') {

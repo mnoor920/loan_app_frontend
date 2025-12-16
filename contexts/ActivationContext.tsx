@@ -1,6 +1,7 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { apiFetch } from '@/lib/api-client';
 
 // Import step data interfaces
 interface Step1Data {
@@ -97,8 +98,6 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
   // Load data from database first, then localStorage as fallback
   useEffect(() => {
     const loadData = async () => {
@@ -124,9 +123,7 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
         }
 
         // First try to load from database
-        const response = await fetch(`${API_URL}/api/activation/profile`, {
-          credentials: 'include',
-        });
+        const response = await apiFetch('/api/activation/profile');
 
         if (response.ok) {
           const { profile } = await response.json();
@@ -319,12 +316,11 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
 
       console.log(`💾 Saving step ${step} to database:`, dataToSave);
 
-      const response = await fetch(`${API_URL}/api/activation/profile`, {
+      const response = await apiFetch('/api/activation/profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           step,
           data: dataToSave
@@ -362,9 +358,8 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
           formData.append('file', file);
           formData.append('documentType', type);
 
-          const response = await fetch(`${API_URL}/api/documents/upload`, {
+          const response = await apiFetch('/api/activation/documents/upload', {
             method: 'POST',
-            credentials: 'include',
             body: formData,
           });
 

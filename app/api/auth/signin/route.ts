@@ -19,9 +19,11 @@ export async function POST(request: NextRequest) {
     console.log('User authenticated:', user.email)
     console.log('Token generated (first 20 chars):', token.substring(0, 20) + '...')
 
-    // Set HTTP-only cookie
+    // Return token in response body (client will store in localStorage)
+    // Also set cookie as fallback for backward compatibility
     const response = NextResponse.json({
       message: 'Login successful',
+      token: token, // Send token in response body for localStorage
       user: {
         id: user.id,
         email: user.email,
@@ -32,16 +34,16 @@ export async function POST(request: NextRequest) {
       redirectTo: user.role === 'superadmin' ? '/admin/dashboard' : '/userdashboard'
     })
 
+    // Set cookie as fallback (for backward compatibility)
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: true, // Set to true for production
+      secure: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1',
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7 // 7 days
     })
 
-    console.log('Cookie set on response')
-    console.log('Response cookies:', response.cookies.getAll())
+    console.log('Token returned in response body and cookie set as fallback')
 
     return response
 

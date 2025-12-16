@@ -1,6 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { tokenStorage } from '@/lib/token-storage'
+import { apiFetch } from '@/lib/api-client'
 
 interface User {
   id: string
@@ -28,20 +30,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  // Use relative URLs for auth routes so they go through Next.js API routes
-  // This ensures cookies are set on the same domain (critical for Vercel)
+  // Check authentication status using token from localStorage
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include',
+      const token = tokenStorage.getToken()
+
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      const response = await apiFetch('/api/auth/me', {
+        skipAuth: false, // Will use token from localStorage via apiFetch
       })
 
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
+      } else {
+        // Token is invalid, clear it
+        tokenStorage.removeToken()
+        setUser(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      tokenStorage.removeToken()
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -55,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ email, password }),
       })
 
@@ -64,6 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('AuthContext: Response data:', data);
 
       if (response.ok) {
+        // Store token in localStorage
+        if (data.token) {
+          tokenStorage.setToken(data.token)
+          console.log('AuthContext: Token stored in localStorage');
+        }
+
         setUser(data.user)
         console.log('AuthContext: Login successful, returning redirect:', data.redirectTo);
         return { success: true, redirectTo: data.redirectTo }
@@ -84,16 +103,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify(formData),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        // Backend now returns requiresEmailVerification logic
-        // If successful signup but verification needed, data.user might be present or we check data structure
+        // Store token in localStorage if provided
         if (data.token) {
+          tokenStorage.setToken(data.token)
           setUser(data.user)
         }
         return { success: true, requiresEmailVerification: data.requiresEmailVerification }
@@ -107,10 +125,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      await apiFetch('/api/auth/logout', { method: 'POST' })
+      tokenStorage.removeToken()
       setUser(null)
     } catch (error) {
       console.error('Logout failed:', error)
+      // Clear token and user even if API call fails
+      tokenStorage.removeToken()
+      setUser(null)
     }
   }
 

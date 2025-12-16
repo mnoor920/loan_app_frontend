@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '@/lib/api-client';
 
 interface ProfileBatchData {
   profile: any;
@@ -38,10 +39,8 @@ export function useProfileData(userId: string | null): UseProfileDataReturn {
     setError(null);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const response = await fetch(`${API_URL}/api/activation/batch`, {
-        credentials: 'include',
-      });
+      // Use apiFetch which automatically adds Authorization header from localStorage
+      const response = await apiFetch('/api/profile/batch');
 
       if (!response.ok) {
         if (response.status === 401) {
