@@ -4,7 +4,8 @@ export interface UploadResult {
   error?: string;
 }
 
-// Use relative URLs to go through Next.js API routes (ensures cookies are sent)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
 export class FileUploadService {
   static async uploadDocument(
     file: File,
@@ -19,7 +20,7 @@ export class FileUploadService {
         formData.append('activationProfileId', activationProfileId);
       }
 
-      const response = await fetch('/api/activation/documents/upload', {
+      const response = await fetch(`${API_URL}/api/documents/upload`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
@@ -49,8 +50,7 @@ export class FileUploadService {
 
   static async getUserDocuments() {
     try {
-      // Use relative URL to go through Next.js API route (ensures cookies are sent)
-      const response = await fetch('/api/activation/documents', {
+      const response = await fetch(`${API_URL}/api/activation/documents`, {
         credentials: 'include',
       });
 

@@ -23,8 +23,8 @@ export function useActivationStatus(userId: string | null): UseActivationStatusR
     }
 
     try {
-      // Use relative URL to go through Next.js API route (ensures cookies are sent)
-      const response = await fetch('/api/activation/profile', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/activation/profile`, {
         credentials: 'include',
       });
 

@@ -1,6 +1,3 @@
-// Force dynamic rendering to ensure this route is always handled as a server route
-export const dynamic = 'force-dynamic'
-
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { getUserByEmailOrPhone } from '@/lib/simple-auth'

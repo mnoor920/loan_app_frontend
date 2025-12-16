@@ -38,9 +38,8 @@ export function useProfileData(userId: string | null): UseProfileDataReturn {
     setError(null);
 
     try {
-      // Use relative URL to go through Next.js API route (ensures cookies are sent)
-      // Note: This should use /api/profile/batch if that route exists, otherwise it will be proxied
-      const response = await fetch('/api/profile/batch', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_URL}/api/activation/batch`, {
         credentials: 'include',
       });
 

@@ -1,6 +1,3 @@
-// Force dynamic rendering to ensure this route is always handled as a server route
-export const dynamic = 'force-dynamic'
-
 import { NextRequest, NextResponse } from 'next/server'
 import { signInSchema } from '@/lib/validations'
 import { authenticateUser, generateToken } from '@/lib/simple-auth'
@@ -35,15 +32,12 @@ export async function POST(request: NextRequest) {
       redirectTo: user.role === 'superadmin' ? '/admin/dashboard' : '/userdashboard'
     })
 
-    // Set cookie with proper settings for production
-    const isProduction = process.env.NODE_ENV === 'production'
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: isProduction, // true for HTTPS (Vercel), false for localhost
+      secure: false, // Set to false for localhost
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      // Don't set domain - let it default to current domain (important for Vercel)
+      maxAge: 60 * 60 * 24 * 7 // 7 days
     })
 
     console.log('Cookie set on response')

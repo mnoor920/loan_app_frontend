@@ -68,7 +68,7 @@ interface UserDocument {
 
 const ProfilePage = () => {
   const { user, loading } = useAuth();
-  // Use relative URLs to go through Next.js API routes (ensures cookies are sent)
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   // Use the new batch profile data hook with caching
   const {
@@ -195,7 +195,7 @@ const ProfilePage = () => {
           break;
       }
 
-      const response = await fetch('/api/activation/profile', {
+      const response = await fetch(`${API_URL}/api/activation/profile`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -234,8 +234,7 @@ const ProfilePage = () => {
       formData.append("file", file);
       formData.append("documentType", documentType);
 
-      // Use relative URL to go through Next.js API route (ensures cookies are sent)
-      const response = await fetch('/api/activation/documents/upload', {
+      const response = await fetch(`${API_URL}/api/documents/upload`, {
         method: "POST",
         credentials: "include",
         body: formData,

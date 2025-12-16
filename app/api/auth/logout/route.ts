@@ -1,6 +1,3 @@
-// Force dynamic rendering to ensure this route is always handled as a server route
-export const dynamic = 'force-dynamic'
-
 import { NextResponse } from 'next/server'
 
 export async function POST() {
@@ -23,7 +20,7 @@ export async function POST() {
 
   } catch (error: any) {
     console.error('Logout error:', error)
-
+    
     return NextResponse.json(
       { error: 'Logout failed' },
       { status: 500 }

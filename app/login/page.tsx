@@ -22,10 +22,7 @@ export default function LoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      // Use window.location for full page reload to ensure cookie is available
-      // This ensures the middleware can read the newly set cookie
-      const redirectTo = result.redirectTo || '/userdashboard';
-      window.location.href = redirectTo;
+      window.location.href = result.redirectTo || '/userdashboard';
     } else {
       setError(result.error || 'Login failed');
       setLoading(false);
@@ -40,12 +37,12 @@ export default function LoginPage() {
           <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 p-8 md:p-12 flex flex-col justify-between order-2 md:order-1 relative overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-
+            
             {/* Logo and Title */}
             <div className="relative z-10">
               <Link href="/" className="flex items-center gap-3 mb-8 hover:opacity-90 transition-opacity">
                 <div className="w-10 h-10 flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg">
-                  <span className="text-white font-bold text-xl">B</span>
+                   <span className="text-white font-bold text-xl">B</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xl font-bold tracking-tight text-white leading-none">BrightLend</span>
@@ -54,10 +51,10 @@ export default function LoginPage() {
               </Link>
 
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-                Welcome Back to <br />
+                Welcome Back to <br/>
                 <span className="text-emerald-300">Smart Lending.</span>
               </h1>
-
+              
               <p className="text-emerald-100/80 text-sm leading-relaxed max-w-sm">
                 Securely access your accounts, manage loans, and track your financial progress with our next-generation platform.
               </p>
@@ -65,13 +62,13 @@ export default function LoginPage() {
 
             {/* Decorative/Footer */}
             <div className="relative z-10 mt-12">
-              <div className="flex items-center gap-3 text-emerald-200/60 text-xs uppercase tracking-widest">
-                <span>Secure</span>
-                <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                <span>Encrypted</span>
-                <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                <span>Trusted</span>
-              </div>
+               <div className="flex items-center gap-3 text-emerald-200/60 text-xs uppercase tracking-widest">
+                  <span>Secure</span>
+                  <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                  <span>Encrypted</span>
+                  <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                  <span>Trusted</span>
+               </div>
             </div>
           </div>
 
@@ -92,11 +89,11 @@ export default function LoginPage() {
                     {error}
                   </div>
                 )}
-
+                
                 {/* Email Input */}
                 <div className="space-y-1.5">
-                  <label
-                    htmlFor="email"
+                  <label 
+                    htmlFor="email" 
                     className="block text-sm font-semibold text-slate-700"
                   >
                     Email Address
@@ -115,14 +112,14 @@ export default function LoginPage() {
                 {/* Password Input */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="password"
+                    <label 
+                      htmlFor="password" 
                       className="block text-sm font-semibold text-slate-700"
                     >
                       Password
                     </label>
-                    <a
-                      href="#"
+                    <a 
+                      href="#" 
                       className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
                     >
                       Forgot password?
@@ -170,8 +167,8 @@ export default function LoginPage() {
                 <div className="pt-2 text-center">
                   <p className="text-slate-500 text-sm">
                     Don't have an account?{' '}
-                    <a
-                      href="/signup"
+                    <a 
+                      href="/signup" 
                       className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors"
                     >
                       Create Account
@@ -180,9 +177,9 @@ export default function LoginPage() {
                 </div>
               </form>
             </div>
-
+            
             <div className="mt-8 text-center">
-              <p className="text-xs text-slate-400">© 2024 BrightLend Financial. All rights reserved.</p>
+               <p className="text-xs text-slate-400">© 2024 BrightLend Financial. All rights reserved.</p>
             </div>
           </div>
         </div>
