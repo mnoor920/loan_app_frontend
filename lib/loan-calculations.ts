@@ -47,12 +47,12 @@ export function calculateCompoundInterestPayment(
   interestRate: number
 ): number {
   const monthlyRate = interestRate / 100 / 12;
-  
+
   if (monthlyRate === 0) {
     return loanAmount / durationMonths;
   }
 
-  const monthlyPayment = loanAmount * 
+  const monthlyPayment = loanAmount *
     (monthlyRate * Math.pow(1 + monthlyRate, durationMonths)) /
     (Math.pow(1 + monthlyRate, durationMonths) - 1);
 
@@ -106,7 +106,7 @@ export function validateLoanDuration(duration: number): { isValid: boolean; erro
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'PKR',
     minimumFractionDigits: 2,
   }).format(amount);
 }

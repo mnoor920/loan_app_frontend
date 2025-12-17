@@ -1,6 +1,7 @@
 'use client'
 import React, { useRef } from 'react';
 import { Upload, X } from 'lucide-react';
+import Image from 'next/image';
 
 interface FileUploadProps {
   label: string;
@@ -9,6 +10,8 @@ interface FileUploadProps {
   onFileSelect: (file: File) => void;
   onFileRemove: () => void;
   preview?: string;
+  // Optional static image to show when there is no preview yet
+  placeholderImage?: string;
   error?: string;
   required?: boolean;
   className?: string;
@@ -21,6 +24,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   onFileRemove,
   preview,
+  placeholderImage,
   error,
   required = false,
   className = ''
@@ -81,20 +85,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      
-      <div 
+
+      <div
         onClick={handleClick}
-        className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 ${
-          error 
-            ? 'border-red-300 bg-red-50' 
-            : 'border-slate-300 bg-slate-50/50 hover:border-emerald-500 hover:bg-emerald-50'
-        }`}
+        className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 ${error
+          ? 'border-red-300 bg-red-50'
+          : 'border-slate-300 bg-slate-50/50 hover:border-emerald-500 hover:bg-emerald-50'
+          }`}
       >
         {preview ? (
           <div className="relative">
-            <img 
-              src={preview} 
-              alt={label} 
+            <img
+              src={preview}
+              alt={label}
               className="max-h-40 mx-auto rounded shadow-sm"
             />
             <button
@@ -105,20 +108,33 @@ const FileUpload: React.FC<FileUploadProps> = ({
               <X className="w-4 h-4" />
             </button>
           </div>
+        ) : placeholderImage ? (
+          <div className="flex flex-col items-center gap-3">
+            <Image
+              src={placeholderImage}
+              width={100}
+              height={100}
+              alt={`${label} placeholder`}
+              className="max-h-32 mx-auto rounded shadow-sm"
+            />
+          </div>
         ) : (
           <div>
             <Upload className="w-12 h-12 mx-auto text-emerald-100 mb-4 drop-shadow-sm" />
-            <p className="text-slate-600">
-              <span className="text-emerald-600 hover:text-emerald-700 hover:underline font-bold">
-                Upload a file
-              </span>{' '}
-              or drag and drop
-            </p>
-            <p className="text-xs font-medium text-slate-500 mt-2 uppercase tracking-wide">
-              {getAcceptedFormats()} up to {formatFileSize(maxSize)}
-            </p>
           </div>
         )}
+        <div>
+          <p className="text-slate-600">
+            <span className="text-emerald-600 hover:text-emerald-700 hover:underline font-bold">
+              Upload a file
+            </span>{' '}
+            or drag and drop
+          </p>
+          <p className="text-xs font-medium text-slate-500 mt-2 uppercase tracking-wide">
+            {getAcceptedFormats()} up to {formatFileSize(maxSize)}
+          </p>
+        </div>
+
       </div>
 
       <input

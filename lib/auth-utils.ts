@@ -28,6 +28,12 @@ export function getTokenFromRequest(request: NextRequest): string | null {
     return cookieToken;
   }
 
+  // No localStorage on server; if ever running on client, guard accordingly
+  if (typeof window !== 'undefined') {
+    const lsToken = window.localStorage.getItem('auth-token');
+    if (lsToken) return lsToken;
+  }
+
   return null;
 }
 

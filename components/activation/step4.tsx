@@ -3,6 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { validatePakistaniNIC } from '../../lib/pakistani-validators';
 import { useActivation, Step4Data } from '../../contexts/ActivationContext';
 import FileUpload from '../ui/FileUpload';
+import NICFrontSide from '/public/nic_frontside.jpg';
+import NICBackSide from '/public/images/nic_backside.jpg';
+import SelfieWithNIC from '/public/selfie_with_cnic.webp';
+import ElectricityBill from '/public/images/electricity-bill.png';
+import DriverLicense from '/public/driver_lience.jpg';
 
 interface Step4Props {
   onNext: (data: Step4Data) => void;
@@ -19,16 +24,17 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
     backImage: null,
     selfieImage: null,
     passportPhoto: null,
-    driverLicensePhoto: null
+    driverLicensePhoto: null,
+    electricityBillPhoto: null
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof Step4Data, string>>>({});
-  const [previews, setPreviews] = useState<{ 
-    front?: string; 
-    back?: string; 
-    selfie?: string; 
-    passport?: string; 
-    driverLicense?: string; 
+  const [previews, setPreviews] = useState<{
+    front?: string;
+    back?: string;
+    selfie?: string;
+    electricityBill?: string;
+    driverLicense?: string;
   }>({});
 
   // Load saved data on component mount
@@ -42,7 +48,8 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
         backImage: null,
         selfieImage: null,
         passportPhoto: null,
-        driverLicensePhoto: null
+        driverLicensePhoto: null,
+        electricityBillPhoto: null
       });
     }
   }, [getStepData]);
@@ -50,13 +57,30 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
   const handlePaste = (e: React.ClipboardEvent) => e.preventDefault();
   const handleCopy = (e: React.ClipboardEvent) => e.preventDefault();
 
-  const handleFileSelect = (type: 'front' | 'back' | 'selfie' | 'passport' | 'driverLicense', file: File) => {
+  const formatCNIC = (value: string): string => {
+    // Remove all non-numeric characters
+    const numbers = value.replace(/\D/g, '');
+
+    // Limit to 13 digits
+    const limited = numbers.slice(0, 13);
+
+    // Format as XXXXX-XXXXXXX-X
+    if (limited.length <= 5) {
+      return limited;
+    } else if (limited.length <= 12) {
+      return `${limited.slice(0, 5)}-${limited.slice(5)}`;
+    } else {
+      return `${limited.slice(0, 5)}-${limited.slice(5, 12)}-${limited.slice(12)}`;
+    }
+  };
+
+  const handleFileSelect = (type: 'front' | 'back' | 'selfie' | 'passport' | 'driverLicense' | 'electricityBill', file: File) => {
     if (file.size > 10 * 1024 * 1024) {
-      setErrors({ ...errors, [type + (type === 'passport' || type === 'driverLicense' ? 'Photo' : 'Image')]: 'File size must be less than 10MB' });
+      setErrors({ ...errors, [type + (type === 'passport' || type === 'driverLicense' || type === 'electricityBill' ? 'Photo' : 'Image')]: 'File size must be less than 10MB' });
       return;
     }
     if (!['image/png', 'image/jpeg', 'image/jpg', 'image/gif'].includes(file.type)) {
-      setErrors({ ...errors, [type + (type === 'passport' || type === 'driverLicense' ? 'Photo' : 'Image')]: 'Only PNG, JPG, GIF files are allowed' });
+      setErrors({ ...errors, [type + (type === 'passport' || type === 'driverLicense' || type === 'electricityBill' ? 'Photo' : 'Image')]: 'Only PNG, JPG, GIF files are allowed' });
       return;
     }
 
@@ -64,25 +88,27 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
     reader.onloadend = () => setPreviews({ ...previews, [type]: reader.result as string });
     reader.readAsDataURL(file);
 
-    const fieldName = type === 'passport' ? 'passportPhoto' : 
-                     type === 'driverLicense' ? 'driverLicensePhoto' : 
-                     type + 'Image';
-    
+    const fieldName = type === 'passport' ? 'passportPhoto' :
+      type === 'electricityBill' ? 'electricityBillPhoto' :
+        type === 'driverLicense' ? 'driverLicensePhoto' :
+          type + 'Image';
+
     setFormData({ ...formData, [fieldName]: file });
-    setErrors({ ...errors, [type + (type === 'passport' || type === 'driverLicense' ? 'Photo' : 'Image')]: '' });
+    setErrors({ ...errors, [type + (type === 'passport' || type === 'driverLicense' || type === 'electricityBill' ? 'Photo' : 'Image')]: '' });
   };
 
-  const handleFileRemove = (type: 'front' | 'back' | 'selfie' | 'passport' | 'driverLicense') => {
+  const handleFileRemove = (type: 'front' | 'back' | 'selfie' | 'passport' | 'driverLicense' | 'electricityBill') => {
     setPreviews({ ...previews, [type]: undefined });
-    const fieldName = type === 'passport' ? 'passportPhoto' : 
-                     type === 'driverLicense' ? 'driverLicensePhoto' : 
-                     type + 'Image';
+    const fieldName = type === 'passport' ? 'passportPhoto' :
+      type === 'driverLicense' ? 'driverLicensePhoto' :
+        type === 'electricityBill' ? 'electricityBillPhoto' :
+          type + 'Image';
     setFormData({ ...formData, [fieldName]: null });
   };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof Step4Data, string>> = {};
-    
+
     if (!formData.idNumber.trim()) {
       newErrors.idNumber = 'NIC number is required';
     } else {
@@ -91,13 +117,13 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
         newErrors.idNumber = nicValidation.error;
       }
     }
-    
-    if (!formData.frontImage) newErrors.frontImage = 'Front NIC image is required';
-    if (!formData.backImage) newErrors.backImage = 'Back NIC image is required';
-    if (!formData.selfieImage) newErrors.selfieImage = 'Selfie image is required';
-    if (!formData.passportPhoto) newErrors.passportPhoto = 'Passport photo is required';
-    if (!formData.driverLicensePhoto) newErrors.driverLicensePhoto = 'Driver license photo is required';
-    
+
+    // if (!formData.frontImage) newErrors.frontImage = 'Front NIC image is required';
+    // if (!formData.backImage) newErrors.backImage = 'Back NIC image is required';
+    // if (!formData.selfieImage) newErrors.selfieImage = 'Selfie image is required';
+    // if (!formData.passportPhoto) newErrors.passportPhoto = 'Passport photo is required';
+    // if (!formData.driverLicensePhoto) newErrors.driverLicensePhoto = 'Driver license photo is required';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -155,28 +181,25 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">ID Type:</label>
-                <input 
-                  type="text" 
-                  value="NIC" 
-                  disabled 
+                <input
+                  type="text"
+                  value="NIC"
+                  disabled
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 text-slate-500 cursor-not-allowed font-medium"
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">NIC Number:</label>
-                <input 
-                  type="text" 
-                  value={formData.idNumber} 
+                <input
+                  type="text"
+                  value={formData.idNumber}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    // Only allow numbers and hyphens, max 15 characters
-                    if (/^[0-9-]*$/.test(value) && value.length <= 15) {
-                      setFormData({ ...formData, idNumber: value });
-                    }
-                  }} 
-                  onPaste={handlePaste} 
-                  onCopy={handleCopy} 
-                  placeholder="XXXXX-XXXXXXX-X" 
+                    const formatted = formatCNIC(e.target.value);
+                    setFormData({ ...formData, idNumber: formatted });
+                  }}
+                  onPaste={handlePaste}
+                  onCopy={handleCopy}
+                  placeholder="XXXXX-XXXXXXX-X"
                   maxLength={15}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-900 transition-all font-medium"
                 />
@@ -190,6 +213,7 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
               onFileRemove={() => handleFileRemove('front')}
               preview={previews.front}
               error={errors.frontImage}
+              placeholderImage={NICFrontSide.src}
               required
             />
 
@@ -199,33 +223,37 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
               onFileRemove={() => handleFileRemove('back')}
               preview={previews.back}
               error={errors.backImage}
+              placeholderImage={NICBackSide.src}
               required
             />
 
             <FileUpload
-              label="Upload selfie:"
+              label="Upload Selfie with NIC:"
               onFileSelect={(file) => handleFileSelect('selfie', file)}
               onFileRemove={() => handleFileRemove('selfie')}
               preview={previews.selfie}
               error={errors.selfieImage}
+              placeholderImage={SelfieWithNIC.src}
               required
             />
 
             <FileUpload
-              label="Upload passport photo:"
-              onFileSelect={(file) => handleFileSelect('passport', file)}
-              onFileRemove={() => handleFileRemove('passport')}
-              preview={previews.passport}
-              error={errors.passportPhoto}
+              label="Upload Electricity Bill: (Optional)"
+              onFileSelect={(file) => handleFileSelect('electricityBill', file)}
+              onFileRemove={() => handleFileRemove('electricityBill')}
+              preview={previews.electricityBill}
+              error={errors.electricityBillPhoto}
+              placeholderImage={ElectricityBill.src}
               required
             />
 
             <FileUpload
-              label="Upload driver's license photo:"
+              label="Upload Driver's License: (Optional)"
               onFileSelect={(file) => handleFileSelect('driverLicense', file)}
               onFileRemove={() => handleFileRemove('driverLicense')}
               preview={previews.driverLicense}
               error={errors.driverLicensePhoto}
+              placeholderImage={DriverLicense.src}
               required
             />
           </div>

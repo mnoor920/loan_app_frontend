@@ -16,7 +16,7 @@ export async function GET(
   try {
     // Await params in Next.js 15
     const { id } = await params;
-    
+
     // Get token from cookies
     const token = request.cookies.get('auth-token')?.value;
 
@@ -65,14 +65,14 @@ export async function GET(
       });
     } catch (docError: any) {
       console.error('Document data retrieval error:', docError);
-      
+
       if (docError.message.includes('timeout') || docError.message.includes('terminated')) {
         return NextResponse.json(
           { error: 'Document loading timed out. Please try again in a moment.' },
           { status: 408 } // Request Timeout
         );
       }
-      
+
       return NextResponse.json(
         { error: 'Failed to load document data' },
         { status: 500 }
@@ -81,14 +81,14 @@ export async function GET(
 
   } catch (error: any) {
     console.error('Get document URL error:', error);
-    
+
     if (error.message.includes('timeout') || error.message.includes('terminated')) {
       return NextResponse.json(
         { error: 'Request timed out. Please try again.' },
         { status: 408 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to get document URL' },
       { status: 500 }

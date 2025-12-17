@@ -114,22 +114,22 @@ const Dashboard = () => {
       <DashboardLayout userName={displayName}>
         {/* Main Content Area with Gradient Background */}
         <div className="min-h-[calc(100vh-80px)]">
-           <div className="max-w-7xl mx-auto space-y-8">
-             
+          <div className="max-w-7xl mx-auto space-y-8">
+
             {/* Welcome Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-2xl p-8 shadow-xl text-white relative overflow-hidden">
-               {/* Background Pattern */}
-               <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-               <div className="relative z-10">
-                 <h1 className="text-3xl font-bold mb-2">
-                   {isAccountActivated ? `Welcome back, ${displayName}!` : `Welcome, ${displayName}!`}
-                 </h1>
-                 <p className="text-emerald-100/80 max-w-xl">
-                   {isAccountActivated
-                     ? "Here's your financial overview. You are fully verified and ready to grow."
-                     : "Let's get your account activated. Complete the verification steps below to unlock full access."}
-                 </p>
-               </div>
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+              <div className="relative z-10">
+                <h1 className="text-3xl font-bold mb-2">
+                  {isAccountActivated ? `Welcome back, ${displayName}!` : `Welcome, ${displayName}!`}
+                </h1>
+                <p className="text-emerald-100/80 max-w-xl">
+                  {isAccountActivated
+                    ? "Here's your financial overview. You are fully verified and ready to grow."
+                    : "Let's get your account activated. Complete the verification steps below to unlock full access."}
+                </p>
+              </div>
 
               {isAccountActivated && (
                 <div className="relative z-10 flex-shrink-0">
@@ -162,7 +162,7 @@ const Dashboard = () => {
             {/* Non-Activated State - Account Activation Card */}
             {!isAccountActivated && (
               <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-8 relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
                 {/* Small loading indicator */}
                 {loadingActivation && (
                   <div className="absolute top-6 right-6">
@@ -173,13 +173,13 @@ const Dashboard = () => {
                 <div className="flex flex-col lg:flex-row gap-8">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-6">
-                       <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
-                         <Shield className="w-6 h-6 text-emerald-600" />
-                       </div>
-                       <div>
-                          <h2 className="text-xl font-bold text-slate-900">Activate Your Account</h2>
-                          <p className="text-slate-500 text-sm">Complete these steps to unlock funding.</p>
-                       </div>
+                      <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                        <Shield className="w-6 h-6 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900">Activate Your Account</h2>
+                        <p className="text-slate-500 text-sm">Complete these steps to unlock funding.</p>
+                      </div>
                     </div>
 
                     {/* Progress Bar */}
@@ -200,17 +200,16 @@ const Dashboard = () => {
                     <div className="grid sm:grid-cols-2 gap-4">
                       {[
                         "Personal Information",
-                        "Character References", 
+                        "Character References",
                         "Upload Identification",
                         "Employment Information",
                         "Bank Details",
                         "Review & Signature"
                       ].map((step, idx) => (
                         <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/50">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                            idx + 1 < localCurrentStep ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'
-                          }`}>
-                             {idx + 1 < localCurrentStep ? '✓' : idx + 1}
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx + 1 < localCurrentStep ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'
+                            }`}>
+                            {idx + 1 < localCurrentStep ? '✓' : idx + 1}
                           </div>
                           <span className={`text-sm font-medium ${idx + 1 < localCurrentStep ? 'text-slate-700' : 'text-slate-400'}`}>
                             {step}
@@ -221,9 +220,9 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex flex-col justify-center items-center lg:border-l border-slate-100 lg:pl-8">
-                     <p className="text-center text-slate-500 text-sm mb-6 max-w-xs">
-                        Ready to start your financial journey? It only takes a few minutes.
-                     </p>
+                    <p className="text-center text-slate-500 text-sm mb-6 max-w-xs">
+                      Ready to start your financial journey? It only takes a few minutes.
+                    </p>
                     <button
                       onClick={handleActivateClick}
                       className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5"
@@ -243,7 +242,7 @@ const Dashboard = () => {
 
                 {/* Dashboard Stats & Charts (FastDashboardContent) */}
                 <div className="bg-transparent">
-                  <FastDashboardContent 
+                  <FastDashboardContent
                     onLoanDetailsClick={handleViewLoanDetails}
                     onWithdraw={handleWithdraw}
                   />
@@ -251,8 +250,8 @@ const Dashboard = () => {
 
                 {/* Quick Action Cards */}
                 <div>
-                   <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Link
                       href="/loan"
                       className="group p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-emerald-900/5 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
@@ -268,8 +267,8 @@ const Dashboard = () => {
                     </Link>
 
                     <div className="group p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-pointer">
-                       <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-                       <div className="relative z-10">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                      <div className="relative z-10">
                         <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-sm">
                           <Wallet className="w-6 h-6" />
                         </div>
@@ -279,16 +278,16 @@ const Dashboard = () => {
                     </div>
 
                     <div className="group p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-purple-900/5 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-pointer">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-                        <div className="relative z-10">
-                          <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-sm">
-                            <FileUp className="w-6 h-6" />
-                          </div>
-                          <h4 className="text-lg font-bold text-slate-900 mb-1">Documents</h4>
-                          <p className="text-slate-500 text-sm">Upload or view your files.</p>
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                      <div className="relative z-10">
+                        <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-sm">
+                          <FileUp className="w-6 h-6" />
                         </div>
+                        <h4 className="text-lg font-bold text-slate-900 mb-1">Documents</h4>
+                        <p className="text-slate-500 text-sm">Upload or view your files.</p>
+                      </div>
                     </div>
-                   </div>
+                  </div>
                 </div>
               </>
             )}
@@ -305,13 +304,13 @@ const Dashboard = () => {
 
             {/* Modals */}
             {showActivationFlow && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                  {localCurrentStep === 1 && <Step1 onNext={handleStep1Next} onClose={handleCloseActivation} />}
-                  {localCurrentStep === 2 && <Step2 onNext={handleStep2Next} onBack={handleStep2Back} onClose={handleCloseActivation} />}
-                  {localCurrentStep === 3 && <Step3 onNext={handleStep3Next} onBack={handleStep3Back} onClose={handleCloseActivation} />}
-                  {localCurrentStep === 4 && <Step4 onNext={handleStep4Next} onBack={handleStep4Back} onClose={handleCloseActivation} />}
-                  {localCurrentStep === 5 && <Step5 onNext={handleStep5Next} onBack={handleStep5Back} onClose={handleCloseActivation} />}
-                  {localCurrentStep === 6 && <Step6 onFinish={handleStep6Next} onBack={handleStep6Back} onClose={handleCloseActivation} />}
+              <div className="fixed inset-0 z-50 top-0 left-0 w-full h-full flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                {localCurrentStep === 1 && <Step1 onNext={handleStep1Next} onClose={handleCloseActivation} />}
+                {localCurrentStep === 2 && <Step2 onNext={handleStep2Next} onBack={handleStep2Back} onClose={handleCloseActivation} />}
+                {localCurrentStep === 3 && <Step3 onNext={handleStep3Next} onBack={handleStep3Back} onClose={handleCloseActivation} />}
+                {localCurrentStep === 4 && <Step4 onNext={handleStep4Next} onBack={handleStep4Back} onClose={handleCloseActivation} />}
+                {localCurrentStep === 5 && <Step5 onNext={handleStep5Next} onBack={handleStep5Back} onClose={handleCloseActivation} />}
+                {localCurrentStep === 6 && <Step6 onFinish={handleStep6Next} onBack={handleStep6Back} onClose={handleCloseActivation} />}
               </div>
             )}
 
@@ -319,9 +318,9 @@ const Dashboard = () => {
               isOpen={showWithdrawModal}
               onClose={() => setShowWithdrawModal(false)}
               loanId={withdrawLoanId}
-              onSuccess={() => {}}
+              onSuccess={() => { }}
             />
-           </div>
+          </div>
         </div>
       </DashboardLayout>
     </ToastProvider>

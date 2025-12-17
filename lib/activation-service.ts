@@ -1064,7 +1064,8 @@ export class ActivationService {
       'selfie': 'identity',
       'signature': 'signature',
       'bank_statement': 'financial',
-      'address_proof': 'address'
+      'address_proof': 'address',
+      'electricity_bill': 'address'
     };
 
     return categoryMap[documentType] || 'identity';

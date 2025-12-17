@@ -39,6 +39,7 @@ interface Step4Data {
   selfieImage: File | null;
   passportPhoto: File | null;
   driverLicensePhoto: File | null;
+  electricityBillPhoto: File | null;
 }
 
 interface Step5Data {
@@ -174,7 +175,8 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
                 backImage: null,
                 selfieImage: null,
                 passportPhoto: null,
-                driverLicensePhoto: null
+                driverLicensePhoto: null,
+                electricityBillPhoto: null
               };
             }
 
@@ -347,7 +349,8 @@ export const ActivationProvider: React.FC<ActivationProviderProps> = ({ children
       { field: 'backImage', type: 'id_back' },
       { field: 'selfieImage', type: 'selfie' },
       { field: 'passportPhoto', type: 'passport_photo' },
-      { field: 'driverLicensePhoto', type: 'driver_license' }
+      { field: 'driverLicensePhoto', type: 'driver_license' },
+      { field: 'electricityBillPhoto', type: 'electricity_bill' }
     ];
 
     for (const { field, type } of fileFields) {

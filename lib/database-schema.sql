@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS user_documents (
   activation_profile_id UUID REFERENCES user_activation_profiles(id) ON DELETE CASCADE,
   
   -- Document Information
-  document_type VARCHAR(50) NOT NULL CHECK (document_type IN ('id_front', 'id_back', 'selfie', 'passport_photo', 'driver_license')),
+  document_type VARCHAR(50) NOT NULL CHECK (document_type IN ('id_front', 'id_back', 'selfie', 'passport_photo', 'driver_license', 'electricity_bill')),
   original_filename VARCHAR(255) CHECK (LENGTH(TRIM(original_filename)) > 0),
   file_path VARCHAR(500) CHECK (LENGTH(TRIM(file_path)) > 0),
   file_size INTEGER CHECK (file_size > 0 AND file_size <= 10485760),

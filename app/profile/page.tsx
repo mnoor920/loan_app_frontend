@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../../components/ui/dashboardlayout";
 import DocumentViewerModal from "../../components/ui/DocumentViewerModal";
 import {
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useProfileData } from "../../hooks/useProfileData";
+import { apiFetch } from "@/lib/api-client";
 
 interface ActivationProfile {
   id: string;
@@ -68,7 +69,6 @@ interface UserDocument {
 
 const ProfilePage = () => {
   const { user, loading } = useAuth();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   // Use the new batch profile data hook with caching
   const {
@@ -85,6 +85,33 @@ const ProfilePage = () => {
   const documentsByType = profileBatchData?.documentsByType || {};
   const progress = profileBatchData?.progress || 0;
   const stats = profileBatchData?.stats;
+  const [profileData, setProfileData] = useState<any>(null);
+  const [profileDocuments, setProfileDocuments] = useState<UserDocument[]>([]);
+  const [profileProgress, setProfileProgress] = useState<number | null>(null);
+  const [reloading, setReloading] = useState(false);
+
+  const loadProfile = useCallback(async () => {
+    const response = await apiFetch('/api/activation/profile');
+    if (response.ok) {
+      const data = await response.json();
+      setProfileData(data?.profile ?? null);
+      setProfileDocuments(data?.documents ?? []);
+      if (typeof data?.progress === 'number') {
+        setProfileProgress(data.progress);
+      }
+    } else {
+      console.error("Failed to fetch profile data");
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  const effectiveProfile = profileData ?? profile;
+  const effectiveDocuments =
+    (profileDocuments && profileDocuments.length > 0 ? profileDocuments : documents) || [];
+  const effectiveProgress = profileProgress ?? progress ?? 0;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
@@ -112,32 +139,32 @@ const ProfilePage = () => {
     switch (section) {
       case "personal":
         setEditFormData({
-          fullName: profile?.fullName || "",
-          gender: profile?.gender || "male",
-          dateOfBirth: profile?.dateOfBirth || "",
-          maritalStatus: profile?.maritalStatus || "",
-          nationality: profile?.nationality || "",
+          fullName: effectiveProfile?.fullName || "",
+          gender: effectiveProfile?.gender || "male",
+          dateOfBirth: effectiveProfile?.dateOfBirth || "",
+          maritalStatus: effectiveProfile?.maritalStatus || "",
+          nationality: effectiveProfile?.nationality || "",
         });
         break;
       case "address":
         setEditFormData({
-          residingCountry: profile?.residingCountry || "",
-          stateRegionProvince: profile?.stateRegionProvince || "",
-          townCity: profile?.townCity || "",
+          residingCountry: effectiveProfile?.residingCountry || "",
+          stateRegionProvince: effectiveProfile?.stateRegionProvince || "",
+          townCity: effectiveProfile?.townCity || "",
         });
         break;
       case "id":
         setEditFormData({
-          idType: profile?.idType || "NIC",
-          idNumber: profile?.idNumber || "",
+          idType: effectiveProfile?.idType || "NIC",
+          idNumber: effectiveProfile?.idNumber || "",
         });
         break;
       case "bank":
         setEditFormData({
-          accountType: profile?.accountType || "bank",
-          bankName: profile?.bankName || "",
-          accountNumber: profile?.accountNumber || "",
-          accountHolderName: profile?.accountHolderName || "",
+          accountType: effectiveProfile?.accountType || "bank",
+          bankName: effectiveProfile?.bankName || "",
+          accountNumber: effectiveProfile?.accountNumber || "",
+          accountHolderName: effectiveProfile?.accountHolderName || "",
         });
         break;
     }
@@ -195,12 +222,11 @@ const ProfilePage = () => {
           break;
       }
 
-      const response = await fetch(`${API_URL}/api/activation/profile`, {
+      const response = await apiFetch('/api/activation/profile', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({
           step,
           data: stepData,
@@ -234,9 +260,8 @@ const ProfilePage = () => {
       formData.append("file", file);
       formData.append("documentType", documentType);
 
-      const response = await fetch(`${API_URL}/api/documents/upload`, {
+      const response = await apiFetch('/api/activation/documents/upload', {
         method: "POST",
-        credentials: "include",
         body: formData,
       });
 
@@ -322,11 +347,18 @@ const ProfilePage = () => {
             </div>
 
             <button
-              onClick={refreshProfile}
-              disabled={loadingProfile}
+              onClick={async () => {
+                setReloading(true);
+                try {
+                  await Promise.all([refreshProfile(), loadProfile()]);
+                } finally {
+                  setReloading(false);
+                }
+              }}
+              disabled={loadingProfile || reloading}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white hover:shadow-sm border border-slate-200 rounded-lg transition-all disabled:opacity-50 bg-slate-50"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingProfile ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${(loadingProfile || reloading) ? 'animate-spin' : ''}`} />
               Refresh
             </button>
           </div>
@@ -344,12 +376,12 @@ const ProfilePage = () => {
             <div className="flex items-center gap-3">
               <span
                 className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold border ${getStatusColor(
-                  profile?.activationStatus || "pending"
+                  effectiveProfile?.activationStatus || "pending"
                 )}`}
               >
-                {profile?.activationStatus === "completed"
+                {effectiveProfile?.activationStatus === "completed"
                   ? "✓ Verified"
-                  : profile?.activationStatus === "in_progress"
+                  : effectiveProfile?.activationStatus === "in_progress"
                     ? "In Progress"
                     : "Pending"}
               </span>
@@ -369,20 +401,20 @@ const ProfilePage = () => {
                 Completion Progress
               </span>
               <span className="text-sm font-bold text-emerald-600">
-                {progress}%
+                {effectiveProgress}%
               </span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
               <div
                 className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
+                style={{ width: `${effectiveProgress}%` }}
               ></div>
             </div>
           </div>
 
-          {profile?.completedAt && (
+          {effectiveProfile?.completedAt && (
             <p className="text-xs text-slate-400 mt-2 text-right">
-              Verified on {formatDate(profile.completedAt)}
+              Verified on {formatDate(effectiveProfile.completedAt)}
             </p>
           )}
         </div>
@@ -523,23 +555,23 @@ const ProfilePage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase">Full Name</label>
-                    <p className="text-slate-900 font-medium">{profile?.fullName || "Not provided"}</p>
+                    <p className="text-slate-900 font-medium">{effectiveProfile?.fullName || "Not provided"}</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase">Gender</label>
-                    <p className="text-slate-900 font-medium capitalize">{profile?.gender || "Not provided"}</p>
+                    <p className="text-slate-900 font-medium capitalize">{effectiveProfile?.gender || "Not provided"}</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase">Date of Birth</label>
-                    <p className="text-slate-900 font-medium">{profile?.dateOfBirth ? formatDate(profile.dateOfBirth) : "Not provided"}</p>
+                    <p className="text-slate-900 font-medium">{effectiveProfile?.dateOfBirth ? formatDate(effectiveProfile.dateOfBirth) : "Not provided"}</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase">Marital Status</label>
-                    <p className="text-slate-900 font-medium capitalize">{profile?.maritalStatus || "Not provided"}</p>
+                    <p className="text-slate-900 font-medium capitalize">{effectiveProfile?.maritalStatus || "Not provided"}</p>
                   </div>
                   <div className="col-span-2">
                     <label className="text-xs font-bold text-slate-400 uppercase">Nationality</label>
-                    <p className="text-slate-900 font-medium">{profile?.nationality || "Not provided"}</p>
+                    <p className="text-slate-900 font-medium">{effectiveProfile?.nationality || "Not provided"}</p>
                   </div>
                 </div>
               </div>
@@ -561,15 +593,15 @@ const ProfilePage = () => {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">Country</label>
-                  <p className="text-slate-900 font-medium">{profile?.residingCountry || "Not provided"}</p>
+                  <p className="text-slate-900 font-medium">{effectiveProfile?.residingCountry || "Not provided"}</p>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">State / Province</label>
-                  <p className="text-slate-900 font-medium">{profile?.stateRegionProvince || "Not provided"}</p>
+                  <p className="text-slate-900 font-medium">{effectiveProfile?.stateRegionProvince || "Not provided"}</p>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">Town / City</label>
-                  <p className="text-slate-900 font-medium">{profile?.townCity || "Not provided"}</p>
+                  <p className="text-slate-900 font-medium">{effectiveProfile?.townCity || "Not provided"}</p>
                 </div>
               </div>
             </div>
@@ -590,11 +622,11 @@ const ProfilePage = () => {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">ID Type</label>
-                  <p className="text-slate-900 font-medium">{profile?.idType || "Not provided"}</p>
+                  <p className="text-slate-900 font-medium">{effectiveProfile?.idType || "Not provided"}</p>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">ID Number</label>
-                  <p className="text-slate-900 font-medium">{profile?.idNumber || "Not provided"}</p>
+                  <p className="text-slate-900 font-medium">{effectiveProfile?.idNumber || "Not provided"}</p>
                 </div>
               </div>
             </div>
@@ -615,19 +647,19 @@ const ProfilePage = () => {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">Bank Name</label>
-                  <p className="text-slate-900 font-medium">{profile?.bankName || "Not provided"}</p>
+                  <p className="text-slate-900 font-medium">{effectiveProfile?.bankName || "Not provided"}</p>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">Account Number</label>
                   <p className="text-slate-900 font-medium tracking-wider">
-                    {profile?.accountNumber
-                      ? `**** ${profile.accountNumber.slice(-4)}`
+                    {effectiveProfile?.accountNumber
+                      ? `**** ${effectiveProfile.accountNumber.slice(-4)}`
                       : "Not provided"}
                   </p>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase">Account Holder</label>
-                  <p className="text-slate-900 font-medium">{profile?.accountHolderName || "Not provided"}</p>
+                  <p className="text-slate-900 font-medium">{effectiveProfile?.accountHolderName || "Not provided"}</p>
                 </div>
               </div>
             </div>
@@ -635,7 +667,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Digital Signature */}
-        {profile?.signatureData && (
+        {effectiveProfile?.signatureData && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
@@ -648,7 +680,7 @@ const ProfilePage = () => {
 
             <div className="border-2 border-slate-200 rounded-xl p-4 bg-slate-50/30">
               <img
-                src={profile.signatureData}
+                src={effectiveProfile.signatureData}
                 alt="Digital Signature"
                 className="max-h-32 mx-auto"
               />
@@ -657,7 +689,7 @@ const ProfilePage = () => {
         )}
 
         {/* Family/Character References */}
-        {profile?.familyRelatives && profile.familyRelatives.length > 0 && (
+        {effectiveProfile?.familyRelatives && effectiveProfile.familyRelatives.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
@@ -669,7 +701,7 @@ const ProfilePage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profile.familyRelatives.map((relative: any, index: number) => (
+              {effectiveProfile.familyRelatives.map((relative: any, index: number) => (
                 <div
                   key={index}
                   className="border border-slate-100 bg-slate-50/50 rounded-xl p-4 hover:border-indigo-100 transition-colors"
@@ -710,9 +742,9 @@ const ProfilePage = () => {
             )}
           </div>
 
-          {documents.length > 0 ? (
+          {effectiveDocuments.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map((document) => (
+              {effectiveDocuments.map((document) => (
                 <div
                   key={document.id}
                   className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow group bg-slate-50/30"
@@ -821,12 +853,11 @@ const ProfilePage = () => {
                         "
                       />
                     </div>
-                    {documentsByType[type] &&
-                      documentsByType[type].length > 0 && (
-                        <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
-                          <CheckCircle className="w-3 h-3" /> Uploaded: {documentsByType[type][0].original_filename}
-                        </p>
-                      )}
+                    {(documentsByType[type] && documentsByType[type].length > 0) && (
+                      <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                        <CheckCircle className="w-3 h-3" /> Uploaded: {documentsByType[type][0].original_filename}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -843,7 +874,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Signature */}
-        {profile?.signature_data && (
+        {effectiveProfile?.signature_data && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center text-pink-600">
@@ -856,7 +887,7 @@ const ProfilePage = () => {
 
             <div className="border border-slate-200 rounded-xl p-6 bg-slate-50/50 flex justify-center">
               <img
-                src={profile.signature_data}
+                src={effectiveProfile.signature_data}
                 alt="Digital Signature"
                 className="max-w-full h-auto opacity-80"
                 style={{ maxHeight: "120px" }}
