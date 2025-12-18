@@ -2,22 +2,22 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Upload, 
-  X, 
-  Save, 
-  AlertCircle, 
-  CheckCircle, 
+import {
+  Upload,
+  X,
+  Save,
+  AlertCircle,
+  CheckCircle,
   User,
   FileText,
   Trash2,
   Eye,
   RefreshCw
 } from 'lucide-react';
-import { 
-  validateUserProfile, 
-  validateName, 
-  validateDateOfBirth, 
+import {
+  validateUserProfile,
+  validateName,
+  validateDateOfBirth,
   validateNationality,
   validateRequired,
   validateIdNumber,
@@ -28,15 +28,15 @@ import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { adminApi, handleApiError } from '@/lib/api-client';
 
 interface FamilyReference {
-  id: string;
+  id?: string;
   fullName: string;
   relationship: string;
-  contactInfo: string;
+  phoneNumber: string;
 }
 
 interface UserDocument {
   id: string;
-  documentType: 'id_front' | 'id_back' | 'selfie' | 'passport_photo' | 'driver_license';
+  documentType: 'national_id' | 'id_front' | 'id_back' | 'selfie' | 'passport_photo' | 'driver_license' | 'electricity_bill' | 'gas_bill' | 'payslip' | 'bank_statement';
   filePath: string;
   originalFilename: string;
   verificationStatus: 'pending' | 'approved' | 'rejected';
@@ -52,6 +52,7 @@ interface UserActivationProfile {
   dateOfBirth: string;
   maritalStatus: 'single' | 'married' | 'divorced' | 'widowed';
   nationality: string;
+  agreedToTerms?: boolean;
   // Step 2: Family/Relatives
   familyRelatives: FamilyReference[];
   // Step 3: Address
@@ -83,7 +84,7 @@ interface UserProfileEditorProps {
 
 export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
   const router = useRouter();
-  
+
   // Memoize the error handler options to prevent re-renders
   const errorHandlerOptions = useMemo(() => ({
     maxRetries: 3,
@@ -92,31 +93,32 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
       console.error('Profile editor error:', error);
     }
   }), []);
-  
-  const { 
-    handleError, 
-    clearError, 
-    executeWithErrorHandling, 
+
+  const {
+    handleError,
+    clearError,
+    executeWithErrorHandling,
     getErrorMessage,
-    hasError 
+    hasError
   } = useErrorHandler(errorHandlerOptions);
-  
+
   // Data states
   const [profile, setProfile] = useState<UserActivationProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
+
   // Form states
   const [formData, setFormData] = useState<Partial<UserActivationProfile>>({});
   const [adminReason, setAdminReason] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  
-  // Document upload states
+
+  // Document states
   const [uploadingDocuments, setUploadingDocuments] = useState<Set<string>>(new Set());
   const [showReplaceDialog, setShowReplaceDialog] = useState<string | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState<string | null>(null);
-  
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; type: string; name: string; loading?: boolean; error?: boolean } | null>(null);
+
   // Validation states
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -125,17 +127,17 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!userId) return;
-      
+
       const result = await executeWithErrorHandling(
         () => adminApi.getUserProfile(userId),
         'UserProfileEditor.fetchProfile'
       );
-      
+
       if (result?.success) {
         setProfile(result.profile);
         setFormData(result.profile);
       }
-      
+
       setLoading(false);
     };
 
@@ -148,7 +150,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
       ...prev,
       [field]: value
     }));
-    
+
     // Clear field error when user starts typing
     if (fieldErrors[field]) {
       setFieldErrors(prev => {
@@ -157,7 +159,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         return newErrors;
       });
     }
-    
+
     // Clear validation errors
     if (validationErrors.length > 0) {
       setValidationErrors([]);
@@ -183,7 +185,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
       () => adminApi.deleteUserDocument(userId, documentId),
       'UserProfileEditor.removeDocument'
     );
-    
+
     if (result?.success) {
       // Remove document from local state
       setFormData(prev => ({
@@ -202,33 +204,33 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
   const handleDocumentReplace = async (documentId: string, file: File) => {
     setUploadingDocuments(prev => new Set(prev).add(documentId));
     clearError();
-    
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('documentId', documentId);
-    
+
     const result = await executeWithErrorHandling(
       () => adminApi.replaceUserDocument(userId, documentId, formData),
       'UserProfileEditor.replaceDocument'
     );
-    
+
     if (result?.success) {
       // Update document in local state
       setFormData(prev => ({
         ...prev,
-        documents: prev.documents?.map(doc => 
+        documents: prev.documents?.map(doc =>
           doc.id === documentId ? result.document : doc
         ) || []
       }));
       setProfile(prev => prev ? {
         ...prev,
-        documents: prev.documents.map(doc => 
+        documents: prev.documents.map(doc =>
           doc.id === documentId ? result.document : doc
         )
       } : null);
       setShowReplaceDialog(null);
     }
-    
+
     setUploadingDocuments(prev => {
       const newSet = new Set(prev);
       newSet.delete(documentId);
@@ -238,28 +240,38 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
 
   // Handle view document securely
   const handleViewDocument = async (documentId: string, mimeType: string, filename: string) => {
+    // Open modal immediately with loading state
+    setPreviewDoc({
+      url: '',
+      type: mimeType,
+      name: filename,
+      loading: true
+    });
+
     try {
-      const blob = await executeWithErrorHandling(
-        () => adminApi.getDocumentContent(documentId),
-        'UserProfileEditor.viewDocument'
-      );
-      
+      const blob = await adminApi.getDocumentContent(documentId);
+
       if (blob) {
         // Create object URL
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        // Suggest filename if possible (though target=_blank usually displays)
-        // If it sends headers correctly, browser might handle display.
-        // For viewing, opening a new tab with Object URL is best.
-        window.open(url, '_blank');
-        
-        // Cleanup after a delay (to ensure it opens)
-        setTimeout(() => window.URL.revokeObjectURL(url), 1000 * 60); // 1 minute
+        setPreviewDoc({
+          url,
+          type: blob.type || mimeType,
+          name: filename,
+          loading: false
+        });
       }
     } catch (error) {
-       console.error("Failed to view document", error);
+      console.error("Failed to view document", error);
+      setPreviewDoc(prev => prev ? { ...prev, loading: false, error: true } : null);
+    }
+  };
+
+  // Close preview and cleanup
+  const closePreview = () => {
+    if (previewDoc) {
+      window.URL.revokeObjectURL(previewDoc.url);
+      setPreviewDoc(null);
     }
   };
 
@@ -273,13 +285,13 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         handleError(new Error('Please upload a valid image (JPEG, PNG) or PDF file'));
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         handleError(new Error('File size must be less than 5MB'));
         return;
       }
-      
+
       handleDocumentReplace(documentId, file);
     }
   };
@@ -288,19 +300,19 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     const generalErrors: string[] = [];
-    
+
     // Validate admin reason
     const reasonValidation = validateAdminReason(adminReason);
     if (!reasonValidation.isValid) {
       generalErrors.push(reasonValidation.error!);
     }
-    
+
     // Validate profile data
     const profileValidation = validateUserProfile(formData);
     if (!profileValidation.isValid) {
       generalErrors.push(...profileValidation.errors);
     }
-    
+
     // Individual field validations
     if (formData.fullName) {
       const nameValidation = validateName(formData.fullName, 'Full name');
@@ -308,45 +320,45 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         errors.fullName = nameValidation.error!;
       }
     }
-    
+
     if (formData.dateOfBirth) {
       const dobValidation = validateDateOfBirth(formData.dateOfBirth);
       if (!dobValidation.isValid) {
         errors.dateOfBirth = dobValidation.error!;
       }
     }
-    
+
     if (formData.nationality) {
       const nationalityValidation = validateNationality(formData.nationality);
       if (!nationalityValidation.isValid) {
         errors.nationality = nationalityValidation.error!;
       }
     }
-    
+
     if (formData.idNumber && formData.idType) {
       const idValidation = validateIdNumber(formData.idNumber, formData.idType);
       if (!idValidation.isValid) {
         errors.idNumber = idValidation.error!;
       }
     }
-    
+
     if (formData.accountNumber) {
       const accountValidation = validateBankAccount(formData.accountNumber);
       if (!accountValidation.isValid) {
         errors.accountNumber = accountValidation.error!;
       }
     }
-    
+
     if (formData.accountHolderName) {
       const holderValidation = validateName(formData.accountHolderName, 'Account holder name');
       if (!holderValidation.isValid) {
         errors.accountHolderName = holderValidation.error!;
       }
     }
-    
+
     setFieldErrors(errors);
     setValidationErrors(generalErrors);
-    
+
     return Object.keys(errors).length === 0 && generalErrors.length === 0;
   };
 
@@ -360,23 +372,23 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
 
     setSaving(true);
     clearError();
-    
+
     const result = await executeWithErrorHandling(
       () => adminApi.updateUserProfile(userId, formData, 'admin', adminReason),
       'UserProfileEditor.saveProfile'
     );
-    
+
     if (result?.success) {
       setProfile(result.profile);
       setFormData(result.profile);
       setSaveSuccess(true);
       setShowConfirmDialog(false);
       setAdminReason('');
-      
+
       // Hide success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
     }
-    
+
     setSaving(false);
   };
 
@@ -416,13 +428,18 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
 
   const getDocumentTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
+      'national_id': 'National ID Card',
       'id_front': 'ID Front Side',
       'id_back': 'ID Back Side',
-      'selfie': 'Selfie',
+      'selfie': 'Selfie with ID',
       'passport_photo': 'Passport Photo',
-      'driver_license': 'Driver License'
+      'driver_license': 'Driver License',
+      'electricity_bill': 'Electricity Bill',
+      'gas_bill': 'Gas Bill',
+      'payslip': 'Payslip',
+      'bank_statement': 'Bank Statement'
     };
-    return labels[type] || type;
+    return labels[type] || type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   // Helper component for field errors
@@ -541,15 +558,15 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
               </p>
             </div>
           </div>
-          
+
           <div className="flex gap-3 lg:flex-shrink-0">
-            <button 
+            <button
               onClick={() => router.back()}
               className="px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Cancel
             </button>
-            <button 
+            <button
               onClick={() => setShowConfirmDialog(true)}
               disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
@@ -566,7 +583,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
           Step 1: Personal Information
         </h2>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -591,11 +608,10 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
               type="text"
               value={formData.fullName || ''}
               onChange={(e) => handleFieldChange('fullName', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                fieldErrors.fullName 
-                  ? 'border-red-300 dark:border-red-700' 
-                  : 'border-gray-300 dark:border-gray-700'
-              }`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${fieldErrors.fullName
+                ? 'border-red-300 dark:border-red-700'
+                : 'border-gray-300 dark:border-gray-700'
+                }`}
             />
             <FieldError error={fieldErrors.fullName} />
           </div>
@@ -608,11 +624,10 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
               type="date"
               value={formData.dateOfBirth || ''}
               onChange={(e) => handleFieldChange('dateOfBirth', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                fieldErrors.dateOfBirth 
-                  ? 'border-red-300 dark:border-red-700' 
-                  : 'border-gray-300 dark:border-gray-700'
-              }`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${fieldErrors.dateOfBirth
+                ? 'border-red-300 dark:border-red-700'
+                : 'border-gray-300 dark:border-gray-700'
+                }`}
             />
             <FieldError error={fieldErrors.dateOfBirth} />
           </div>
@@ -634,7 +649,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
             </select>
           </div>
 
-          <div className="sm:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Nationality
             </label>
@@ -642,13 +657,31 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
               type="text"
               value={formData.nationality || ''}
               onChange={(e) => handleFieldChange('nationality', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                fieldErrors.nationality 
-                  ? 'border-red-300 dark:border-red-700' 
-                  : 'border-gray-300 dark:border-gray-700'
-              }`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${fieldErrors.nationality
+                ? 'border-red-300 dark:border-red-700'
+                : 'border-gray-300 dark:border-gray-700'
+                }`}
             />
             <FieldError error={fieldErrors.nationality} />
+          </div>
+
+          <div className="flex items-center gap-2 pt-8">
+            <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${formData.agreedToTerms
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              }`}>
+              {formData.agreedToTerms ? (
+                <>
+                  <CheckCircle className="w-3 h-3" />
+                  Agreed to Terms
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-3 h-3" />
+                  Not Agreed to Terms
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -658,7 +691,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
           Step 2: Family References
         </h2>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {formData.familyRelatives?.map((reference, index) => (
             <div key={reference.id || index}>
@@ -692,12 +725,12 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Contact Info
+                    Phone Number
                   </label>
                   <input
                     type="text"
-                    value={reference.contactInfo || ''}
-                    onChange={(e) => handleFamilyReferenceChange(index, 'contactInfo', e.target.value)}
+                    value={reference.phoneNumber || ''}
+                    onChange={(e) => handleFamilyReferenceChange(index, 'phoneNumber', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -712,7 +745,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
           Step 3: Residential Address
         </h2>
-        
+
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -759,7 +792,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
           Step 4: ID Information
         </h2>
-        
+
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
@@ -807,13 +840,12 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
                           {getDocumentTypeLabel(document.documentType)}
                         </span>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        document.verificationStatus === 'approved' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                          : document.verificationStatus === 'rejected'
+                      <span className={`px-2 py-1 text-xs rounded-full ${document.verificationStatus === 'approved'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : document.verificationStatus === 'rejected'
                           ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                           : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                      }`}>
+                        }`}>
                         {document.verificationStatus}
                       </span>
                     </div>
@@ -829,6 +861,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
                         View
                       </button>
 
+                      {/* Commented out for now
                       <button
                         onClick={() => setShowReplaceDialog(document.id)}
                         disabled={uploadingDocuments.has(document.id)}
@@ -848,6 +881,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
                         <Trash2 className="w-3 h-3" />
                         Remove
                       </button>
+                      */}
                     </div>
                   </div>
                 ))}
@@ -862,7 +896,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
           Step 5: Bank Information
         </h2>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -923,13 +957,13 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
             Step 6: Digital Signature
           </h2>
-          
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border border-slate-200 rounded-xl bg-slate-50">
             <div className="flex items-center gap-4">
               <div className="bg-white border-2 border-slate-200 rounded-lg p-3 flex items-center justify-center">
-                <img 
-                  src={profile.signatureData} 
-                  alt="User Signature" 
+                <img
+                  src={profile.signatureData}
+                  alt="User Signature"
                   className="max-h-20 max-w-[200px] object-contain"
                 />
               </div>
@@ -960,7 +994,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Are you sure you want to remove this document? This action cannot be undone.
             </p>
-            
+
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
@@ -970,7 +1004,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowRemoveDialog(null)}
@@ -999,7 +1033,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Select a new file to replace the existing document. The old document will be permanently removed.
             </p>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Choose new file
@@ -1020,7 +1054,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
                 />
               </div>
             </div>
-            
+
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
@@ -1030,7 +1064,7 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowReplaceDialog(null)}
@@ -1082,6 +1116,77 @@ export default function UserProfileEditor({ userId }: UserProfileEditorProps) {
               >
                 {saving ? 'Saving...' : 'Confirm & Save'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {previewDoc.name}
+              </h3>
+              <button
+                onClick={closePreview}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-950 flex items-center justify-center p-4">
+              {previewDoc.loading ? (
+                <div className="text-center">
+                  <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400 animate-pulse">
+                    Loading document content...
+                  </p>
+                </div>
+              ) : previewDoc.error ? (
+                <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+                  <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                  <p className="text-gray-900 dark:text-gray-100 font-medium mb-2">
+                    Failed to load document
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                    There was an error retrieving the document from storage.
+                  </p>
+                  <button
+                    onClick={closePreview}
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Close Preview
+                  </button>
+                </div>
+              ) : previewDoc.type.includes('image') ? (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.name}
+                  className="max-w-full max-h-full object-contain shadow-lg"
+                />
+              ) : previewDoc.type.includes('pdf') ? (
+                <iframe
+                  src={previewDoc.url}
+                  title={previewDoc.name}
+                  className="w-full h-full min-h-[70vh] rounded shadow-lg"
+                />
+              ) : (
+                <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+                  <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-900 dark:text-gray-100 font-medium mb-4">
+                    Preview not available for this file type
+                  </p>
+                  <a
+                    href={previewDoc.url}
+                    download={previewDoc.name}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Download to View
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

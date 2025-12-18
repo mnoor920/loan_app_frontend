@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
           email: process.env.SUPER_ADMIN_EMAIL!,
           firstName: 'Super',
           lastName: 'Admin',
-          role: 'superadmin'
+          role: 'superadmin',
+          isActive: true,
+          walletBalance: 0
         }
       })
     }
@@ -53,7 +55,9 @@ export async function GET(request: NextRequest) {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        role: user.role
+        role: user.role,
+        isActive: user.is_active !== false,
+        walletBalance: parseFloat(user.wallet_balance || '0')
       }
     })
 

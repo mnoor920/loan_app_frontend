@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/ui/dashboardlayout';
-import { Users, Search, Filter } from 'lucide-react';
+import { Users, Search, Filter, MoreVertical, Eye, ShieldCheck, ShieldX, Key, X } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
 
 interface User {
   id: string;
@@ -14,6 +15,7 @@ interface User {
   phone?: string;
   role: string;
   status: string;
+  isActive: boolean;
   createdAt: string;
   lastLogin?: string;
 }
@@ -21,10 +23,19 @@ interface User {
 export default function AdminUsersPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; userId: string; userName: string }>({
+    isOpen: false,
+    userId: '',
+    userName: ''
+  });
+  const [newPassword, setNewPassword] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   // Check authentication and admin role
   useEffect(() => {
@@ -57,8 +68,9 @@ export default function AdminUsersPage() {
             lastName: user.lastName || user.last_name || 'User',
             email: user.email || 'No email',
             phone: user.phone || user.phone_number,
-            role: 'user', // Default role since activation users are regular users
-            status: user.activationStatus === 'completed' ? 'active' : 'inactive',
+            role: user.role || 'user',
+            status: user.isActive === false ? 'suspended' : (user.activationStatus === 'completed' ? 'active' : 'inactive'),
+            isActive: user.isActive !== false,
             createdAt: user.createdAt || user.created_at,
             lastLogin: user.lastLogin || user.last_login
           }));
@@ -97,13 +109,68 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
+      user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesFilter = filterStatus === 'all' || user.status === filterStatus;
-    
+
     return matchesSearch && matchesFilter;
   });
+
+  const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+
+      if (response.ok) {
+        showToast('success', `User account ${!currentStatus ? 'enabled' : 'disabled'} successfully`);
+        setUsers(users.map(u => u.id === userId ? {
+          ...u,
+          isActive: !currentStatus,
+          status: !currentStatus ? (u.status === 'suspended' ? 'active' : u.status) : 'suspended'
+        } : u));
+      } else {
+        showToast('error', 'Failed to update user status');
+      }
+    } catch (error) {
+      showToast('error', 'An error occurred while updating user status');
+    } finally {
+      setUpdating(false);
+      setOpenDropdown(null);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      showToast('error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/admin/users/${passwordModal.userId}/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      if (response.ok) {
+        showToast('success', 'Password changed successfully');
+        setPasswordModal({ isOpen: false, userId: '', userName: '' });
+        setNewPassword('');
+      } else {
+        showToast('error', 'Failed to change password');
+      }
+    } catch (error) {
+      showToast('error', 'An error occurred while changing password');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -237,13 +304,63 @@ export default function AdminUsersPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {user.lastLogin ? formatDate(user.lastLogin) : 'Never'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button 
-                          onClick={() => router.push(`/adminusers/${user.id}`)}
-                          className="text-emerald-600 hover:text-emerald-700 font-bold transition-colors"
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                        <button
+                          onClick={() => setOpenDropdown(openDropdown === user.id ? null : user.id)}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
                         >
-                          View Profile
+                          <MoreVertical className="w-5 h-5" />
                         </button>
+
+                        {openDropdown === user.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setOpenDropdown(null)}
+                            ></div>
+                            <div className="absolute right-6 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+                              <div className="py-1">
+                                <button
+                                  onClick={() => {
+                                    router.push(`/adminusers/${user.id}`);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Profile
+                                </button>
+                                <button
+                                  onClick={() => handleToggleStatus(user.id, user.isActive)}
+                                  disabled={updating}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                                >
+                                  {user.isActive ? (
+                                    <>
+                                      <ShieldX className="w-4 h-4 mr-2 text-red-500" />
+                                      Deactivate Account
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ShieldCheck className="w-4 h-4 mr-2 text-green-500" />
+                                      Activate Account
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setPasswordModal({ isOpen: true, userId: user.id, userName: `${user.firstName} ${user.lastName}` });
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  <Key className="w-4 h-4 mr-2" />
+                                  Change Password
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -258,6 +375,61 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      {passwordModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                Change Password
+              </h3>
+              <button
+                onClick={() => setPasswordModal({ ...passwordModal, isOpen: false })}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Enter a new password for <span className="font-bold text-gray-900 dark:text-gray-100">{passwordModal.userName}</span>.
+              </p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setPasswordModal({ ...passwordModal, isOpen: false })}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleChangePassword}
+                  disabled={updating}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg text-sm font-medium text-white transition-colors"
+                >
+                  {updating ? 'Updating...' : 'Change Password'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

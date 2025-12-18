@@ -184,8 +184,12 @@ export class AdminApiClient {
   /**
    * Get document content
    */
-  async getDocumentContent(documentId: string): Promise<any> {
-    return apiFetchJson(`/api/admin/users/${documentId}/documents/${documentId}`);
+  async getDocumentContent(documentId: string): Promise<Blob> {
+    const response = await apiFetch(`/api/documents/${documentId}/content`);
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+    return response.blob();
   }
 
   /**
@@ -209,6 +213,13 @@ export class AdminApiClient {
 
     const url = `/api/admin/loans/all${queryParams.toString() ? `?${queryParams}` : ''}`;
     return apiFetchJson(url);
+  }
+
+  /**
+   * Get current withdrawal code for a loan
+   */
+  async getWithdrawalCode(loanId: string): Promise<any> {
+    return apiFetchJson(`/api/admin/loans/${loanId}/withdrawal-code`);
   }
 
   /**

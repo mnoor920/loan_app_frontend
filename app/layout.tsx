@@ -2,6 +2,7 @@ import { Ubuntu } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ActivationProvider } from '@/contexts/ActivationContext';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const ubuntu = Ubuntu({
   weight: ['300', '400', '500', '700'],
@@ -18,9 +19,11 @@ export default function RootLayout({
     <html lang="en" className="" suppressHydrationWarning>
       <body className={ubuntu.className}>
         <AuthProvider>
-          <ActivationProvider>
-            {children}
-          </ActivationProvider>
+          <ToastProvider>
+            <ActivationProvider>
+              {children}
+            </ActivationProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

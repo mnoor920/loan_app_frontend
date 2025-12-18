@@ -9,6 +9,8 @@ export interface User {
   firstName: string
   lastName: string
   role: 'user' | 'admin' | 'superadmin'
+  isActive: boolean
+  walletBalance: number
 }
 
 export const hashPassword = async (password: string): Promise<string> => {
@@ -90,13 +92,20 @@ export const authenticateUser = async (identifier: string, password: string) => 
       phoneNumber: '',
       firstName: 'Super',
       lastName: 'Admin',
-      role: 'superadmin' as const
+      role: 'superadmin' as const,
+      isActive: true,
+      walletBalance: 0
     }
   }
 
   const user = await getUserByEmailOrPhone(identifier)
   if (!user) {
     throw new Error('Invalid credentials')
+  }
+
+  // Check if account is active
+  if (user.is_active === false) {
+    throw new Error('Account is disabled. Please contact support.')
   }
 
   // Verify password
@@ -111,6 +120,8 @@ export const authenticateUser = async (identifier: string, password: string) => 
     phoneNumber: user.phone_number,
     firstName: user.first_name,
     lastName: user.last_name,
-    role: user.role
+    role: user.role,
+    isActive: user.is_active !== false,
+    walletBalance: parseFloat(user.wallet_balance || '0')
   }
 }

@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role
+        role: user.role,
+        isActive: user.isActive,
+        walletBalance: user.walletBalance
       },
       redirectTo: user.role === 'superadmin' ? '/admin/dashboard' : '/userdashboard'
     })
