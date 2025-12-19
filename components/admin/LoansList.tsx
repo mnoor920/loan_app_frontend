@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  CreditCard, 
-  Search, 
-  Filter, 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  CreditCard,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   AlertCircle,
   CheckCircle,
@@ -50,11 +50,11 @@ interface LoansListProps {
 
 export default function LoansList({ className = '' }: LoansListProps) {
   const router = useRouter();
-  
+
   // Data states
   const [loans, setLoans] = useState<LoanApplicationWithUser[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filter and pagination states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -63,7 +63,7 @@ export default function LoansList({ className = '' }: LoansListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalLoans, setTotalLoans] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  
+
   const loansPerPage = 20;
 
   // Enhanced error handling
@@ -86,15 +86,15 @@ export default function LoansList({ className = '' }: LoansListProps) {
 
   // Fetch loans with enhanced error handling
   const fetchLoans = async (
-    page: number = 1, 
-    search: string = '', 
+    page: number = 1,
+    search: string = '',
     status: string = 'all',
     sort: string = 'application_date',
     order: string = 'desc'
   ) => {
     setLoading(true);
     clearError();
-    
+
     const result = await executeWithErrorHandling(
       () => adminApi.getAllLoans({
         limit: loansPerPage,
@@ -106,13 +106,13 @@ export default function LoansList({ className = '' }: LoansListProps) {
       }),
       'fetch_loans'
     );
-    
+
     if (result && result.success) {
       setLoans(result.loans || []);
       setTotalLoans(result.total || 0);
       setHasMore(result.pagination?.hasMore || false);
     }
-    
+
     setLoading(false);
   };
 
@@ -154,7 +154,7 @@ export default function LoansList({ className = '' }: LoansListProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'PKR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -247,7 +247,7 @@ export default function LoansList({ className = '' }: LoansListProps) {
               />
             )}
           </div>
-          
+
           {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search */}
@@ -261,7 +261,7 @@ export default function LoansList({ className = '' }: LoansListProps) {
                 className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
+
             {/* Status Filter */}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -314,7 +314,7 @@ export default function LoansList({ className = '' }: LoansListProps) {
                   <div className={`w-12 h-12 bg-gradient-to-br ${getAvatarColor(`${loan.applicant.firstName} ${loan.applicant.lastName}`)} rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0`}>
                     {getInitials(loan.applicant.firstName, loan.applicant.lastName)}
                   </div>
-                  
+
                   {/* Loan Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -333,13 +333,13 @@ export default function LoansList({ className = '' }: LoansListProps) {
                       <span>Applied: {formatDate(loan.applicationDate)}</span>
                     </div>
                   </div>
-                  
+
                   {/* Status and Actions */}
                   <div className="flex flex-col items-end gap-2">
                     <span className={getStatusBadge(loan.status)}>
                       {loan.status}
                     </span>
-                    
+
                     {/* Action Button */}
                     <button
                       onClick={() => router.push(`/adminloans/${loan.id}`)}
@@ -380,8 +380,8 @@ export default function LoansList({ className = '' }: LoansListProps) {
             <CreditCard className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p className="text-lg font-medium mb-2">No Loan Applications Found</p>
             <p className="text-sm">
-              {searchQuery || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filter criteria.' 
+              {searchQuery || statusFilter !== 'all'
+                ? 'Try adjusting your search or filter criteria.'
                 : 'No loan applications have been submitted yet.'}
             </p>
           </div>

@@ -4,6 +4,7 @@
 
 'use client';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useFastDashboard } from '@/hooks/useFastDashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/loan-calculations';
@@ -20,11 +21,11 @@ import {
 
 interface FastDashboardContentProps {
   onLoanDetailsClick: (loanId: string) => void;
-  onWithdraw: (loanId: string) => void;
 }
 
-export default function FastDashboardContent({ onLoanDetailsClick, onWithdraw }: FastDashboardContentProps) {
+export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboardContentProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const { data, loading, error, refresh, lastUpdated, cacheAge } = useFastDashboard({
     userId: user?.id || null,
     enabled: !!user,
@@ -269,20 +270,6 @@ export default function FastDashboardContent({ onLoanDetailsClick, onWithdraw }:
                         {formatCurrency(loan.monthlyPayment)}
                       </p>
                     </div>
-                    <button
-                      onClick={() => onLoanDetailsClick(loan.id)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors"
-                    >
-                      View Details
-                    </button>
-                    {loan.status === 'Approved' && (
-                      <button
-                        onClick={() => onWithdraw(loan.id)}
-                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
-                      >
-                        Withdraw
-                      </button>
-                    )}
                   </div>
                 </div>
               ))}

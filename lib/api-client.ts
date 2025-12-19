@@ -247,6 +247,62 @@ export class AdminApiClient {
   async getDashboardStats(): Promise<any> {
     return apiFetchJson('/api/admin/dashboard/stats');
   }
+
+  /**
+   * Create wallet withdrawal
+   */
+  async createWalletWithdrawal(amount: number): Promise<any> {
+    return apiFetchJson('/api/wallet/withdraw', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    });
+  }
+
+  /**
+   * Get wallet withdrawal history
+   */
+  async getWalletWithdrawals(): Promise<any> {
+    return apiFetchJson('/api/wallet/withdrawals');
+  }
+
+  /**
+   * Update user wallet balance (Admin only)
+   * This will also update the loan amount and recalculate installments
+   */
+  async updateUserWalletBalance(userId: string, walletBalance: number, reason?: string): Promise<any> {
+    return apiFetchJson(`/api/admin/users/${userId}/balances`, {
+      method: 'PATCH',
+      body: JSON.stringify({ walletBalance, reason })
+    });
+  }
+
+  /**
+   * Get existing wallet withdrawal code for a user (Admin only)
+   */
+  async getWalletWithdrawalCode(userId: string): Promise<any> {
+    return apiFetchJson(`/api/admin/users/${userId}/wallet-withdrawal-code`, {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Generate wallet withdrawal code for a user (Admin only)
+   */
+  async generateWalletWithdrawalCode(userId: string): Promise<any> {
+    return apiFetchJson(`/api/admin/users/${userId}/wallet-withdrawal-code`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Set manual wallet withdrawal code for a user (Admin only)
+   */
+  async setWalletWithdrawalCode(userId: string, code: string): Promise<any> {
+    return apiFetchJson(`/api/admin/users/${userId}/wallet-withdrawal-code`, {
+      method: 'PUT',
+      body: JSON.stringify({ code }),
+    });
+  }
 }
 
 // Export singleton instance
@@ -273,7 +329,7 @@ export function handleApiError(error: unknown): AdminError {
   if (error instanceof AdminError) {
     return error;
   }
-  
+
   if (error instanceof Error) {
     return new AdminError(
       error.message,
@@ -283,7 +339,7 @@ export function handleApiError(error: unknown): AdminError {
       error
     );
   }
-  
+
   return new AdminError(
     'An unexpected error occurred',
     ErrorType.UNKNOWN,

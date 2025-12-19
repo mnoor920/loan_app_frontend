@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/ui/dashboardlayout';
-import { Users, Search, Filter, MoreVertical, Eye, ShieldCheck, ShieldX, Key, X } from 'lucide-react';
+import { Users, Search, Filter, MoreVertical, Eye, ShieldCheck, ShieldX, Key, X, Wallet } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
+import GenerateCodeModal from '@/components/admin/GenerateCodeModal';
 
 interface User {
   id: string;
@@ -30,6 +31,11 @@ export default function AdminUsersPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; userId: string; userName: string }>({
+    isOpen: false,
+    userId: '',
+    userName: ''
+  });
+  const [walletCodeModal, setWalletCodeModal] = useState<{ isOpen: boolean; userId: string; userName: string }>({
     isOpen: false,
     userId: '',
     userName: ''
@@ -357,6 +363,19 @@ export default function AdminUsersPage() {
                                   <Key className="w-4 h-4 mr-2" />
                                   Change Password
                                 </button>
+                                <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                <button
+                                  onClick={() => {
+                                    setWalletCodeModal({ isOpen: true, userId: user.id, userName: `${user.firstName} ${user.lastName}` });
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  <div className="">
+                                    <Wallet className="w-4 h-4 mr-2 text-blue-500" />
+                                  </div>
+                                  Generate Wallet Code
+                                </button>
                               </div>
                             </div>
                           </>
@@ -429,6 +448,17 @@ export default function AdminUsersPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Generate Wallet Code Modal */}
+      {walletCodeModal.isOpen && (
+        <GenerateCodeModal
+          isOpen={walletCodeModal.isOpen}
+          onClose={() => setWalletCodeModal({ isOpen: false, userId: '', userName: '' })}
+          userId={walletCodeModal.userId}
+          applicantName={walletCodeModal.userName}
+          codeType="wallet"
+        />
       )}
     </DashboardLayout>
   );

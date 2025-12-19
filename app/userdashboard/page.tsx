@@ -19,7 +19,6 @@ import type { Step1Data, Step2Data, Step3Data, Step4Data, Step5Data, Step6Data }
 
 import FastDashboardContent from '../../components/dashboard/FastDashboardContent';
 import NotificationBanner from '../../components/notifications/NotificationBanner';
-import WithdrawModal from '../../components/dashboard/WithdrawModal';
 import { useActivationStatus } from '../../hooks/useActivationStatus';
 
 const Dashboard = () => {
@@ -27,8 +26,6 @@ const Dashboard = () => {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showActivationFlow, setShowActivationFlow] = useState(false);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [withdrawLoanId, setWithdrawLoanId] = useState<string | null>(null);
   const [localCurrentStep, setLocalCurrentStep] = useState(1);
 
   // Use the new activation status hook with caching
@@ -98,11 +95,6 @@ const Dashboard = () => {
 
   const handleApplyForLoan = () => {
     router.push('/loan');
-  };
-
-  const handleWithdraw = (loanId: string) => {
-    setWithdrawLoanId(loanId);
-    setShowWithdrawModal(true);
   };
 
   const handleViewLoanDetails = (loanId: string) => {
@@ -244,7 +236,6 @@ const Dashboard = () => {
                 <div className="bg-transparent">
                   <FastDashboardContent
                     onLoanDetailsClick={handleViewLoanDetails}
-                    onWithdraw={handleWithdraw}
                   />
                 </div>
 
@@ -266,16 +257,19 @@ const Dashboard = () => {
                       </div>
                     </Link>
 
-                    <div className="group p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-pointer">
+                    <Link
+                      href="/wallet"
+                      className="group p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-pointer"
+                    >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
                       <div className="relative z-10">
                         <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-sm">
                           <Wallet className="w-6 h-6" />
                         </div>
-                        <h4 className="text-lg font-bold text-slate-900 mb-1">Make Payment</h4>
-                        <p className="text-slate-500 text-sm">Pay installments or settle early.</p>
+                        <h4 className="text-lg font-bold text-slate-900 mb-1">My Wallet</h4>
+                        <p className="text-slate-500 text-sm">Withdraw funds from your wallet.</p>
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="group p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-purple-900/5 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-pointer">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
@@ -313,13 +307,6 @@ const Dashboard = () => {
                 {localCurrentStep === 6 && <Step6 onFinish={handleStep6Next} onBack={handleStep6Back} onClose={handleCloseActivation} />}
               </div>
             )}
-
-            <WithdrawModal
-              isOpen={showWithdrawModal}
-              onClose={() => setShowWithdrawModal(false)}
-              loanId={withdrawLoanId}
-              onSuccess={() => { }}
-            />
           </div>
         </div>
       </DashboardLayout>

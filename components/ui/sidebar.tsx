@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { href: '/userdashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/myloans', label: 'My Loans', icon: Wallet },
     { href: '/loan', label: 'Apply for a Loan', icon: PlusCircle },
-
+    { href: '/wallet', label: 'Wallet', icon: Wallet },
     { href: '/profile', label: 'Profile', icon: User },
   ];
 
@@ -110,37 +110,37 @@ const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </ul>
-               
-           {/* Bottom Actions */}
-           <div className="mt-8 pt-6 border-t border-slate-100">
-             <div className="mb-2 px-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-               Settings
-             </div>
-             <ul className="space-y-1">
-               <li>
-                  <button
-                    onClick={handleLogout} 
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors group"
-                  >
-                    <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
-                    <span>Sign Out</span>
-                  </button>
-               </li>
-             </ul>
-           </div>
+
+          {/* Bottom Actions */}
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <div className="mb-2 px-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Settings
+            </div>
+            <ul className="space-y-1">
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors group"
+                >
+                  <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
+                  <span>Sign Out</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </nav>
-        
+
         {/* User Profile Snippet Footer */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-           <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold border border-emerald-200">
-                {userName.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex flex-col">
-                 <span className="text-sm font-bold text-slate-800 truncate max-w-[120px]">{userName}</span>
-                 <span className="text-xs text-slate-500">Member</span>
-              </div>
-           </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold border border-emerald-200">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-800 truncate max-w-[120px]">{userName}</span>
+              <span className="text-xs text-slate-500">Member</span>
+            </div>
+          </div>
         </div>
       </div>
     </>
