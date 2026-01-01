@@ -453,7 +453,7 @@ export class ActivationService {
     const sanitizedData = { ...data };
 
     // Validate account type
-    if (!data.accountType || !['bank', 'ewallet'].includes(data.accountType)) {
+    if (!data.accountType || !['bank', 'ewallet', 'custom'].includes(data.accountType)) {
       errors.push({
         field: 'accountType',
         code: 'INVALID_ACCOUNT_TYPE',
@@ -477,22 +477,37 @@ export class ActivationService {
 
     // Validate account number
     if (data.accountNumber) {
-      const accountValidation = validateBankAccount(data.accountNumber);
-      if (!accountValidation.isValid) {
-        errors.push({
-          field: 'accountNumber',
-          code: 'INVALID_ACCOUNT_NUMBER',
-          message: accountValidation.error!,
-          severity: 'error'
-        });
+      // For custom type, no strict validation - just check it's not empty
+      if (data.accountType === 'custom') {
+        if (!data.accountNumber.trim()) {
+          errors.push({
+            field: 'accountNumber',
+            code: 'REQUIRED',
+            message: 'Bank number is required',
+            severity: 'error'
+          });
+        } else {
+          sanitizedData.accountNumber = data.accountNumber.trim();
+        }
       } else {
-        sanitizedData.accountNumber = data.accountNumber.trim();
+        // For bank and ewallet types, use existing validation
+        const accountValidation = validateBankAccount(data.accountNumber);
+        if (!accountValidation.isValid) {
+          errors.push({
+            field: 'accountNumber',
+            code: 'INVALID_ACCOUNT_NUMBER',
+            message: accountValidation.error!,
+            severity: 'error'
+          });
+        } else {
+          sanitizedData.accountNumber = data.accountNumber.trim();
+        }
       }
     } else {
       errors.push({
         field: 'accountNumber',
         code: 'REQUIRED',
-        message: 'Account number is required',
+        message: data.accountType === 'custom' ? 'Bank number is required' : 'Account number is required',
         severity: 'error'
       });
     }

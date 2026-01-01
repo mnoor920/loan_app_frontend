@@ -244,7 +244,7 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
               preview={previews.electricityBill}
               error={errors.electricityBillPhoto}
               placeholderImage={ElectricityBill.src}
-              required
+
             />
 
             <FileUpload
@@ -254,7 +254,7 @@ const Step4: React.FC<Step4Props> = ({ onNext, onBack, onClose }) => {
               preview={previews.driverLicense}
               error={errors.driverLicensePhoto}
               placeholderImage={DriverLicense.src}
-              required
+
             />
           </div>
 

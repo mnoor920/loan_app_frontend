@@ -43,7 +43,7 @@ interface Step4Data {
 }
 
 interface Step5Data {
-  accountType: 'bank' | 'ewallet';
+  accountType: 'bank' | 'ewallet' | 'custom';
   bankName: string;
   accountNumber: string;
   accountHolderName: string;

@@ -138,7 +138,7 @@ export default function ApproveLoanModal({
               Approved Loan Amount
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">PKR</span>
               <input
                 type="number"
                 value={approvedAmount}
@@ -146,9 +146,8 @@ export default function ApproveLoanModal({
                   setApprovedAmount(e.target.value);
                   if (errors.amount) delete errors.amount;
                 }}
-                className={`w-full pl-8 pr-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
-                  errors.amount ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
-                } ${amountChanged ? 'ring-2 ring-yellow-400' : ''}`}
+                className={`w-full pl-12 pr-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${errors.amount ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
+                  } ${amountChanged ? 'ring-2 ring-yellow-400' : ''}`}
                 placeholder="Enter amount"
               />
             </div>
@@ -178,9 +177,8 @@ export default function ApproveLoanModal({
                 setApprovedDuration(e.target.value);
                 if (errors.duration) delete errors.duration;
               }}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
-                errors.duration ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
-              } ${durationChanged ? 'ring-2 ring-yellow-400' : ''}`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${errors.duration ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
+                } ${durationChanged ? 'ring-2 ring-yellow-400' : ''}`}
               placeholder="Enter duration"
             />
             {durationChanged && (
@@ -211,9 +209,8 @@ export default function ApproveLoanModal({
                   setApprovedInterestRate(e.target.value);
                   if (errors.interestRate) delete errors.interestRate;
                 }}
-                className={`w-full pr-8 px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
-                  errors.interestRate ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
-                } ${rateChanged ? 'ring-2 ring-yellow-400' : ''}`}
+                className={`w-full pr-8 px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${errors.interestRate ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
+                  } ${rateChanged ? 'ring-2 ring-yellow-400' : ''}`}
                 placeholder="Enter rate"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
@@ -243,9 +240,8 @@ export default function ApproveLoanModal({
                 if (errors.reason) delete errors.reason;
               }}
               rows={4}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
-                errors.reason ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
-              }`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${errors.reason ? 'border-red-300' : 'border-gray-300 dark:border-gray-700'
+                }`}
               placeholder="Enter reason for approval..."
             />
             {errors.reason && (

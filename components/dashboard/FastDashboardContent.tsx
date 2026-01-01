@@ -3,24 +3,50 @@
  */
 
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFastDashboard } from '@/hooks/useFastDashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/loan-calculations';
-import { 
-  TrendingUp, 
-  Clock, 
-  FileText, 
-  CreditCard, 
-  RefreshCw,
-  CheckCircle,
-  AlertCircle,
-  XCircle
-} from 'lucide-react';
+import { apiFetchJson } from '@/lib/api-client';
+import { RefreshCw, AlertCircle, XCircle } from 'lucide-react';
+import WalletErrorSuccessMessages from './WalletErrorSuccessMessages';
+import LoanInfoCard from './LoanInfoCard';
+import WalletBalanceCard from './WalletBalanceCard';
+import WithdrawalHistory from './WithdrawalHistory';
+import WithdrawalCodeModal from './WithdrawalCodeModal';
+import RecentLoans from './RecentLoans';
 
 interface FastDashboardContentProps {
   onLoanDetailsClick: (loanId: string) => void;
+}
+
+interface WalletWithdrawal {
+  id: string;
+  amount: number;
+  status: 'pending' | 'review' | 'approved' | 'rejected';
+  bankDetails: {
+    bankName: string;
+    accountNumber: string;
+    accountHolderName: string;
+    accountType: string;
+  };
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
+interface LoanInfo {
+  id: string;
+  loanAmount: number;
+  durationMonths: number;
+  interestRate: number;
+  monthlyPayment: number;
+  totalAmount: number;
+  status: string;
+  approvalDate?: string;
+  firstPaymentDate?: string;
 }
 
 export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboardContentProps) {
@@ -30,6 +56,147 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
     userId: user?.id || null,
     enabled: !!user,
   });
+
+  // Wallet state
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [withdrawals, setWithdrawals] = useState<WalletWithdrawal[]>([]);
+  const [loanInfo, setLoanInfo] = useState<LoanInfo | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [walletSuccess, setWalletSuccess] = useState<string | null>(null);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [withdrawalCode, setWithdrawalCode] = useState('');
+
+  // Fetch wallet data
+  useEffect(() => {
+    if (user && data) {
+      fetchWalletData();
+    }
+  }, [user, data]);
+
+  const fetchWalletData = async () => {
+    try {
+      setWalletLoading(true);
+      setWalletError(null);
+
+      // Fetch user data to get wallet balance
+      const userResponse = await apiFetchJson('/api/auth/me');
+      if (userResponse.user) {
+        setWalletBalance(userResponse.user.walletBalance || 0);
+      }
+
+      // Fetch withdrawal history
+      try {
+        const withdrawalsResponse = await apiFetchJson('/api/wallet/withdrawals');
+        if (withdrawalsResponse.success) {
+          setWithdrawals(withdrawalsResponse.withdrawals || []);
+        }
+      } catch (err) {
+        console.log('Could not fetch withdrawals:', err);
+      }
+
+      // Fetch approved loan information
+      if (data && data.recentLoans && data.recentLoans.length > 0) {
+        try {
+          const loansResponse = await apiFetchJson('/api/loans/user');
+          if (loansResponse.success && loansResponse.loans) {
+            const approvedLoan = loansResponse.loans.find((loan: any) => loan.status === 'Approved');
+            if (approvedLoan) {
+              setLoanInfo({
+                id: approvedLoan.id,
+                loanAmount: approvedLoan.loanAmount,
+                durationMonths: approvedLoan.durationMonths,
+                interestRate: approvedLoan.interestRate,
+                monthlyPayment: approvedLoan.monthlyPayment,
+                totalAmount: approvedLoan.totalAmount,
+                status: approvedLoan.status,
+                approvalDate: approvedLoan.approvalDate,
+                firstPaymentDate: approvedLoan.firstPaymentDate
+              });
+            }
+          }
+        } catch (err) {
+          console.log('Could not fetch loan info:', err);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error fetching wallet data:', err);
+      setWalletError(err.message || 'Failed to load wallet data');
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  const handleWithdrawSubmit = () => {
+    const amount = parseFloat(withdrawAmount);
+    if (isNaN(amount) || amount <= 0 || amount > walletBalance || amount < 0.01) {
+      setWalletError('Please enter a valid amount for withdrawal.');
+      return;
+    }
+    setWalletError(null);
+    setWalletSuccess(null);
+    setShowWithdrawForm(false);
+    setShowCodeModal(true);
+  };
+
+  const handleWithdraw = async () => {
+    const trimmedCode = withdrawalCode.trim();
+    if (!trimmedCode || trimmedCode.length !== 6 || !/^\d{6}$/.test(trimmedCode)) {
+      setWalletError('Please enter a valid 6-digit code');
+      return;
+    }
+
+    const amount = parseFloat(withdrawAmount);
+    try {
+      setWithdrawing(true);
+      setWalletError(null);
+      setWalletSuccess(null);
+
+      const response = await apiFetchJson('/api/wallet/withdraw', {
+        method: 'POST',
+        body: JSON.stringify({ amount, code: trimmedCode })
+      });
+
+      if (response.success) {
+        setWalletSuccess(`Withdrawal request of ${formatCurrency(amount)} submitted successfully!`);
+        setWithdrawAmount('');
+        setWithdrawalCode('');
+        setShowCodeModal(false);
+        setShowWithdrawForm(false);
+        await fetchWalletData();
+      } else {
+        let errorMessage = response.error || response.message || 'Failed to process withdrawal';
+        if (errorMessage.includes('Invalid') && errorMessage.includes('code')) {
+          errorMessage = 'Invalid verification code. Please contact admin to generate a new code.';
+        } else if (errorMessage.includes('already been used') || errorMessage.includes('already used')) {
+          errorMessage = 'This verification code has already been used. Please contact admin to generate a new code.';
+        } else if (errorMessage.includes('belongs to a different user')) {
+          errorMessage = 'This code belongs to a different user. Please contact admin to generate a new code.';
+        }
+        setWalletError(errorMessage);
+      }
+    } catch (err: any) {
+      console.error('Error processing withdrawal:', err);
+      let errorMessage = err.error || err.message || 'Failed to process withdrawal';
+      if (errorMessage.includes('Invalid') && errorMessage.includes('code')) {
+        errorMessage = 'Invalid verification code. Please contact admin to generate a new code.';
+      } else if (errorMessage.includes('already been used') || errorMessage.includes('already used')) {
+        errorMessage = 'This verification code has already been used. Please contact admin to generate a new code.';
+      } else if (errorMessage.includes('belongs to a different user')) {
+        errorMessage = 'This code belongs to a different user. Please contact admin to generate a new code.';
+      } else if (errorMessage.includes('Internal Server Error') || errorMessage.includes('Internal server error')) {
+        errorMessage = 'An error occurred while processing your withdrawal. Please try again or contact support.';
+      }
+      setWalletError(errorMessage);
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
+
 
   // Show loading state only for initial load
   if (loading && !data) {
@@ -90,45 +257,6 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
     return null;
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Approved':
-      case 'In Repayment':
-      case 'Completed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'Pending Approval':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'Rejected':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Approved':
-      case 'In Repayment':
-        return 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900';
-      case 'Completed':
-        return 'bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-900';
-      case 'Pending Approval':
-        return 'bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900';
-      case 'Rejected':
-        return 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900';
-      default:
-        return 'bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-900';
-    }
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -136,8 +264,8 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
       {cacheAge !== null && (
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
           <span>
-            {cacheAge < 60000 
-              ? `Data cached ${Math.round(cacheAge / 1000)}s ago` 
+            {cacheAge < 60000
+              ? `Data cached ${Math.round(cacheAge / 1000)}s ago`
               : `Data cached ${Math.round(cacheAge / 60000)}m ago`
             }
           </span>
@@ -162,9 +290,9 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
         </div>
       )}
 
-      {/* Dashboard Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Total Loan Amount */}
+
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950 rounded-lg flex items-center justify-center">
@@ -177,7 +305,7 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
           </p>
         </div>
 
-        {/* Active Loans */}
+        
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-green-50 dark:bg-green-950 rounded-lg flex items-center justify-center">
@@ -190,7 +318,7 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
           </p>
         </div>
 
-        {/* Pending Loans */}
+        
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-950 rounded-lg flex items-center justify-center">
@@ -203,7 +331,7 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
           </p>
         </div>
 
-        {/* Next Payment Due */}
+
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-purple-50 dark:bg-purple-950 rounded-lg flex items-center justify-center">
@@ -215,68 +343,68 @@ export default function FastDashboardContent({ onLoanDetailsClick }: FastDashboa
             {formatDate(data.stats.nextPaymentDue)}
           </p>
         </div>
+      </div> */}
+
+      {/* Wallet Section */}
+      <div className="space-y-6">
+        <WalletErrorSuccessMessages
+          error={walletError}
+          success={walletSuccess}
+          onDismissError={() => setWalletError(null)}
+          onDismissSuccess={() => setWalletSuccess(null)}
+        />
+
+        {loanInfo && <LoanInfoCard loanInfo={loanInfo} />}
+
+        <WalletBalanceCard
+          walletBalance={walletBalance}
+          withdrawAmount={withdrawAmount}
+          showWithdrawForm={showWithdrawForm}
+          withdrawing={withdrawing}
+          onWithdrawFull={() => {
+            setWithdrawAmount(walletBalance.toString());
+            setShowWithdrawForm(true);
+          }}
+          onWithdrawPartial={() => {
+            setWithdrawAmount('');
+            setShowWithdrawForm(true);
+          }}
+          onAmountChange={(amount) => setWithdrawAmount(amount)}
+          onCancel={() => {
+            setShowWithdrawForm(false);
+            setWithdrawAmount('');
+            setWalletError(null);
+          }}
+          onSubmit={handleWithdrawSubmit}
+        />
+
+        <WithdrawalHistory
+          withdrawals={withdrawals}
+          onRefresh={fetchWalletData}
+        />
       </div>
 
-      {/* Recent Loans */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Recent Loans</h2>
-          <button
-            onClick={refresh}
-            disabled={loading}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50 flex items-center gap-1 transition-colors"
-          >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
+      <WithdrawalCodeModal
+        isOpen={showCodeModal}
+        withdrawAmount={withdrawAmount}
+        withdrawalCode={withdrawalCode}
+        withdrawing={withdrawing}
+        error={walletError}
+        onCodeChange={(code) => setWithdrawalCode(code)}
+        onClose={() => {
+          setShowCodeModal(false);
+          setWithdrawalCode('');
+          setWalletError(null);
+        }}
+        onSubmit={handleWithdraw}
+      />
 
-        <div className="p-6">
-          {data.recentLoans.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 mb-2">No loans found</p>
-              <p className="text-sm text-gray-500 dark:text-gray-500">
-                Apply for your first loan to get started
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {data.recentLoans.map((loan) => (
-                <div
-                  key={loan.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(loan.status)}
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(loan.status)}`}>
-                        {loan.status}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-50">
-                        {formatCurrency(loan.loanAmount)}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Applied: {formatDate(loan.applicationDate)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Payment</p>
-                      <p className="font-medium text-gray-900 dark:text-gray-50">
-                        {formatCurrency(loan.monthlyPayment)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      <RecentLoans
+        loans={data.recentLoans}
+        loading={loading}
+        onRefresh={refresh}
+        onLoanClick={onLoanDetailsClick}
+      />
     </div>
   );
 }

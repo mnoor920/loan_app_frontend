@@ -8,6 +8,7 @@ import {
   Users,
   LogOut,
   X,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -31,6 +32,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({
     { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/adminloans', label: 'All Loans', icon: Wallet },
     { href: '/adminusers', label: 'Users', icon: Users },
+    { href: '/admin/withdrawals', label: 'Withdrawal Requests', icon: CreditCard },
   ];
 
   const isActive = (href: string) => pathname === href;

@@ -431,14 +431,14 @@ const ProfilePage = () => {
                   Personal Information
                 </h3>
               </div>
-              {!isEditing && (
+              {/* {!isEditing && (
                 <button
                   onClick={() => handleEditSection("personal")}
                   className="text-emerald-600 hover:text-emerald-700 text-sm font-semibold hover:bg-emerald-50 px-3 py-1 rounded-lg transition-colors"
                 >
                   Edit
                 </button>
-              )}
+              )} */}
             </div>
 
             {isEditing && editingSection === "personal" ? (

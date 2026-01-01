@@ -22,23 +22,25 @@ interface SidebarProps {
   userAvatar?: string;
   isOpen?: boolean;
   onClose?: () => void;
+  isAccountActivated?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   userName = 'John',
   userAvatar,
   isOpen = false,
-  onClose
+  onClose,
+  isAccountActivated = true
 }) => {
   const pathname = usePathname();
   const { logout } = useAuth();
 
   const mainNavItems = [
-    { href: '/userdashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/myloans', label: 'My Loans', icon: Wallet },
-    { href: '/loan', label: 'Apply for a Loan', icon: PlusCircle },
-    { href: '/wallet', label: 'Wallet', icon: Wallet },
-    { href: '/profile', label: 'Profile', icon: User },
+    { href: '/userdashboard', label: 'Dashboard', icon: LayoutDashboard, requiresActivation: false },
+    // { href: '/myloans', label: 'My Loans', icon: Wallet, requiresActivation: true },
+    // { href: '/loan', label: 'Apply for a Loan', icon: PlusCircle, requiresActivation: true },
+    // { href: '/wallet', label: 'Wallet', icon: Wallet, requiresActivation: true },
+    { href: '/profile', label: 'Profile', icon: User, requiresActivation: false },
   ];
 
   const isActive = (href: string) => pathname === href;
@@ -91,21 +93,33 @@ const Sidebar: React.FC<SidebarProps> = ({
             {mainNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
+              const isDisabled = item.requiresActivation && !isAccountActivated;
 
               return (
                 <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={onClose}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${active
-                      ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                  >
-                    <Icon className={`w-5 h-5 ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                    <span>{item.label}</span>
-                    {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
-                  </Link>
+                  {isDisabled ? (
+                    <div
+                      className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed opacity-50 relative group"
+                      title="Complete account activation to access this feature"
+                    >
+                      <Icon className="w-5 h-5 text-slate-300" />
+                      <span>{item.label}</span>
+                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    </div>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={onClose}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${active
+                        ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                    >
+                      <Icon className={`w-5 h-5 ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                      <span>{item.label}</span>
+                      {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
+                    </Link>
+                  )}
                 </li>
               );
             })}

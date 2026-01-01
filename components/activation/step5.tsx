@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { Building2, Wallet } from 'lucide-react';
+import { Building2, Wallet, Settings } from 'lucide-react';
 import { validatePakistaniIBAN, validatePakistaniPhone } from '../../lib/pakistani-validators';
 import { useActivation, Step5Data } from '../../contexts/ActivationContext';
 
@@ -29,39 +29,104 @@ const Step5: React.FC<Step5Props> = ({ onNext, onBack, onClose }) => {
     }
   }, [getStepData]);
 
-  const pakistanBanks = ['HBL (Habib Bank Limited)', 'UBL (United Bank Limited)', 'MCB (Muslim Commercial Bank)', 'Allied Bank', 'Bank Alfalah', 'Meezan Bank', 'Faysal Bank', 'Standard Chartered Bank', 'JS Bank', 'Bank Al Habib', 'Askari Bank', 'NBP (National Bank of Pakistan)', 'Soneri Bank', 'Silk Bank'];
-  const ewalletProviders = ['JazzCash', 'Easypaisa', 'SadaPay', 'NayaPay', 'Upaisa'];
+  // Complete list of Pakistani Banks
+  const pakistanBanks = [
+    "AlBaraka Bank (Pakistan) Limited",
+    "Allied Bank Limited",
+    "Askari Bank Limited",
+    "Bank AL Habib Limited",
+    "Bank Alfalah Limited",
+    "The Bank of Khyber",
+    "The Bank of Punjab",
+    "BankIslami Pakistan Limited",
+    "Citibank N.A.",
+    "Deutsche Bank AG",
+    "Dubai Islamic Bank Pakistan Limited",
+    "Faysal Bank Limited",
+    "First Women Bank Limited",
+    "Habib Bank Limited",
+    "Habib Metropolitan Bank Limited",
+    "Industrial and Commercial Bank of China Limited",
+    "Industrial Development Bank of Pakistan",
+    "JS Bank Limited",
+    "Meezan Bank Limited",
+    "MCB Bank Limited",
+    "MCB Islamic Bank",
+    "National Bank of Pakistan",
+    "Punjab Provincial Cooperative Bank Ltd.",
+    "Samba Bank Limited",
+    "Sindh Bank Limited",
+    "Easypaisa Bank Limited",
+    "SME Bank Limited",
+    "Soneri Bank Limited",
+    "Standard Chartered Bank (Pakistan) Ltd",
+    "Bank Makramah Limited",
+    "The Bank of Tokyo-Mitsubishi UFJ Ltd.",
+    "United Bank Limited",
+    "Zarai Taraqiati Bank Ltd."
+  ];
 
-  const handlePaste = (e: React.ClipboardEvent) => e.preventDefault();
-  const handleCopy = (e: React.ClipboardEvent) => e.preventDefault();
+  // Complete list of Pakistani E-Wallet Providers
+  const ewalletProviders = [
+    "Easypaisa",
+    "JazzCash",
+    "NayaPay",
+    "SadaPay",
+    "UPaisa",
+    "HBL Konnect",
+    "UBL Omni",
+    "myABL Wallet",
+    "Finja Wallet",
+    "E-Processing Systems Wallet",
+    "Wemsol Wallet",
+    "Akhtar Fuiou Wallet"
+  ];
+
+  // Remove paste/copy restrictions - allow free input
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof Step5Data, string>> = {};
-    
-    if (!formData.bankName) {
-      newErrors.bankName = formData.accountType === 'bank' ? 'Bank name is required' : 'E-wallet provider is required';
-    }
-    
-    if (!formData.accountNumber.trim()) {
-      newErrors.accountNumber = 'Account number is required';
-    } else if (formData.accountType === 'bank') {
-      const ibanValidation = validatePakistaniIBAN(formData.accountNumber);
-      if (!ibanValidation.isValid) {
-        newErrors.accountNumber = ibanValidation.error;
+
+    // For custom type, all three fields are required
+    if (formData.accountType === 'custom') {
+      if (!formData.bankName.trim()) {
+        newErrors.bankName = 'Bank name is required';
       }
-    } else if (formData.accountType === 'ewallet') {
-      const phoneValidation = validatePakistaniPhone(formData.accountNumber);
-      if (!phoneValidation.isValid) {
-        newErrors.accountNumber = phoneValidation.error;
+      if (!formData.accountNumber.trim()) {
+        newErrors.accountNumber = 'Bank number is required';
+      }
+      if (!formData.accountHolderName.trim()) {
+        newErrors.accountHolderName = 'Holder name is required';
+      } else if (formData.accountHolderName.trim().length < 3) {
+        newErrors.accountHolderName = 'Name must be at least 3 characters';
+      }
+    } else {
+      // For bank and ewallet types, validate as before
+      if (!formData.bankName) {
+        newErrors.bankName = formData.accountType === 'bank' ? 'Bank name is required' : 'E-wallet provider is required';
+      }
+
+      if (!formData.accountNumber.trim()) {
+        newErrors.accountNumber = 'Account number is required';
+      } else if (formData.accountType === 'bank') {
+        const ibanValidation = validatePakistaniIBAN(formData.accountNumber);
+        if (!ibanValidation.isValid) {
+          newErrors.accountNumber = ibanValidation.error;
+        }
+      } else if (formData.accountType === 'ewallet') {
+        const phoneValidation = validatePakistaniPhone(formData.accountNumber);
+        if (!phoneValidation.isValid) {
+          newErrors.accountNumber = phoneValidation.error;
+        }
+      }
+
+      if (!formData.accountHolderName.trim()) {
+        newErrors.accountHolderName = 'Account holder name is required';
+      } else if (formData.accountHolderName.trim().length < 3) {
+        newErrors.accountHolderName = 'Name must be at least 3 characters';
       }
     }
-    
-    if (!formData.accountHolderName.trim()) {
-      newErrors.accountHolderName = 'Account holder name is required';
-    } else if (formData.accountHolderName.trim().length < 3) {
-      newErrors.accountHolderName = 'Name must be at least 3 characters';
-    }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -100,12 +165,12 @@ const Step5: React.FC<Step5Props> = ({ onNext, onBack, onClose }) => {
             {/* Account Type */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Account Type</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button type="button" onClick={() => setFormData({ ...formData, accountType: 'bank', bankName: '' })} className={`flex items-center gap-3 p-4 border-2 rounded-xl transition-all ${formData.accountType === 'bank' ? 'border-emerald-600 bg-emerald-50' : 'border-slate-200 hover:border-emerald-400 hover:bg-slate-50'}`}>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.accountType === 'bank' ? 'border-emerald-600' : 'border-slate-300'}`}>
                     {formData.accountType === 'bank' && <div className="w-3 h-3 rounded-full bg-emerald-600"></div>}
                   </div>
-                  <Building2 className={`w-5 h-5 ${formData.accountType === 'bank' ? 'text-emerald-700' : 'text-slate-500'}`}/>
+                  <Building2 className={`w-5 h-5 ${formData.accountType === 'bank' ? 'text-emerald-700' : 'text-slate-500'}`} />
                   <span className={`font-bold ${formData.accountType === 'bank' ? 'text-emerald-900' : 'text-slate-700'}`}>Bank Account</span>
                 </button>
 
@@ -113,35 +178,60 @@ const Step5: React.FC<Step5Props> = ({ onNext, onBack, onClose }) => {
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.accountType === 'ewallet' ? 'border-emerald-600' : 'border-slate-300'}`}>
                     {formData.accountType === 'ewallet' && <div className="w-3 h-3 rounded-full bg-emerald-600"></div>}
                   </div>
-                  <Wallet className={`w-5 h-5 ${formData.accountType === 'ewallet' ? 'text-emerald-700' : 'text-slate-500'}`}/>
+                  <Wallet className={`w-5 h-5 ${formData.accountType === 'ewallet' ? 'text-emerald-700' : 'text-slate-500'}`} />
                   <span className={`font-bold ${formData.accountType === 'ewallet' ? 'text-emerald-900' : 'text-slate-700'}`}>E-Wallet</span>
+                </button>
+
+                <button type="button" onClick={() => setFormData({ ...formData, accountType: 'custom', bankName: '', accountNumber: '', accountHolderName: '' })} className={`flex items-center gap-3 p-4 border-2 rounded-xl transition-all ${formData.accountType === 'custom' ? 'border-emerald-600 bg-emerald-50' : 'border-slate-200 hover:border-emerald-400 hover:bg-slate-50'}`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.accountType === 'custom' ? 'border-emerald-600' : 'border-slate-300'}`}>
+                    {formData.accountType === 'custom' && <div className="w-3 h-3 rounded-full bg-emerald-600"></div>}
+                  </div>
+                  <Settings className={`w-5 h-5 ${formData.accountType === 'custom' ? 'text-emerald-700' : 'text-slate-500'}`} />
+                  <span className={`font-bold ${formData.accountType === 'custom' ? 'text-emerald-900' : 'text-slate-700'}`}>Custom</span>
                 </button>
               </div>
             </div>
 
-            {/* Bank/E-Wallet Provider */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                {formData.accountType === 'bank' ? 'Bank Name' : 'E-Wallet Provider'}
-              </label>
-              <select value={formData.bankName} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-900 transition-all font-medium">
-                <option value="">Select an option</option>
-                {(formData.accountType === 'bank' ? pakistanBanks : ewalletProviders).map(name => <option key={name} value={name}>{name}</option>)}
-              </select>
-              {errors.bankName && <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1">⚠️ {errors.bankName}</p>}
-            </div>
+            {/* Bank/E-Wallet Provider or Custom Bank Name */}
+            {formData.accountType === 'custom' ? (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Bank Name</label>
+                <input
+                  type="text"
+                  value={formData.bankName}
+                  onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                  placeholder="Enter bank name"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-900 transition-all font-medium"
+                />
+                {errors.bankName && <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1">⚠️ {errors.bankName}</p>}
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  {formData.accountType === 'bank' ? 'Bank Name' : 'E-Wallet Provider'}
+                </label>
+                <select value={formData.bankName} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-900 transition-all font-medium">
+                  <option value="">Select an option</option>
+                  {(formData.accountType === 'bank' ? pakistanBanks : ewalletProviders).map(name => <option key={name} value={name}>{name}</option>)}
+                </select>
+                {errors.bankName && <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1">⚠️ {errors.bankName}</p>}
+              </div>
+            )}
 
-            {/* Account Number */}
+            {/* Account Number or Bank Number (for custom) */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                {formData.accountType === 'bank' ? 'IBAN Account Number' : 'Mobile Number'}
+                {formData.accountType === 'custom' ? 'Bank Number' : formData.accountType === 'bank' ? 'IBAN Account Number / Account Number' : 'Mobile Number'}
               </label>
-              <input 
-                type="text" 
-                value={formData.accountNumber} 
+              <input
+                type="text"
+                value={formData.accountNumber}
                 onChange={(e) => {
                   const value = e.target.value;
-                  if (formData.accountType === 'bank') {
+                  if (formData.accountType === 'custom') {
+                    // For custom: allow any characters, no restrictions
+                    setFormData({ ...formData, accountNumber: value });
+                  } else if (formData.accountType === 'bank') {
                     // For bank IBAN: allow letters, numbers, and spaces, max 30 characters (with spaces)
                     if (/^[A-Za-z0-9\s]*$/.test(value) && value.length <= 30) {
                       setFormData({ ...formData, accountNumber: value });
@@ -152,20 +242,26 @@ const Step5: React.FC<Step5Props> = ({ onNext, onBack, onClose }) => {
                       setFormData({ ...formData, accountNumber: value });
                     }
                   }
-                }} 
-                onPaste={handlePaste} 
-                onCopy={handleCopy} 
-                placeholder={formData.accountType === 'bank' ? 'PK36SCBL0000001123456702' : '03XXXXXXXXX'} 
-                maxLength={formData.accountType === 'bank' ? 30 : 11}
+                }}
+                placeholder={formData.accountType === 'custom' ? 'Enter bank number' : formData.accountType === 'bank' ? 'PK36SCBL0000001123456702' : '03XXXXXXXXX'}
+                maxLength={formData.accountType === 'custom' ? undefined : formData.accountType === 'bank' ? 30 : 11}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-900 transition-all font-medium"
               />
               {errors.accountNumber && <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1">⚠️ {errors.accountNumber}</p>}
             </div>
 
-            {/* Account Holder Name */}
+            {/* Account Holder Name or Holder Name (for custom) */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Account Holder Name</label>
-              <input type="text" value={formData.accountHolderName} onChange={(e) => setFormData({ ...formData, accountHolderName: e.target.value })} onPaste={handlePaste} onCopy={handleCopy} placeholder="As it appears on your account" className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-900 transition-all font-medium"/>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                {formData.accountType === 'custom' ? 'Holder Name' : 'Account Holder Name'}
+              </label>
+              <input
+                type="text"
+                value={formData.accountHolderName}
+                onChange={(e) => setFormData({ ...formData, accountHolderName: e.target.value })}
+                placeholder={formData.accountType === 'custom' ? 'Enter holder name' : 'As it appears on your account'}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-900 transition-all font-medium"
+              />
               {errors.accountHolderName && <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1">⚠️ {errors.accountHolderName}</p>}
             </div>
           </div>

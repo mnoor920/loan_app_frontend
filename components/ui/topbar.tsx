@@ -1,9 +1,10 @@
 'use client'
-import { Search, Bell, Menu, ChevronDown, User, Settings, LogOut } from 'lucide-react';
+import { Search, Bell, Menu, ChevronDown, Lock, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import NotificationBadge from '../notifications/NotificationBadge';
+import ResetPasswordModal from './ResetPasswordModal';
 
 interface TopBarProps {
   userName?: string;
@@ -12,14 +13,15 @@ interface TopBarProps {
   onMenuClick?: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ 
+const TopBar: React.FC<TopBarProps> = ({
   userName = 'John',
   userAvatar,
   onSearchChange,
-  onMenuClick 
+  onMenuClick
 }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -49,7 +51,7 @@ const TopBar: React.FC<TopBarProps> = ({
         {/* Left Side - Menu Button + Search */}
         <div className="flex items-center gap-3 sm:gap-4 flex-1">
           {/* Mobile Menu Button */}
-          <button 
+          <button
             onClick={onMenuClick}
             className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
@@ -77,14 +79,14 @@ const TopBar: React.FC<TopBarProps> = ({
 
           {/* User Avatar with Dropdown */}
           <div className="relative" ref={dropdownRef}>
-            <button 
+            <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-3 hover:bg-slate-50 rounded-xl p-1.5 pr-3 transition-colors border border-transparent hover:border-slate-200"
             >
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
                 {userAvatar ? (
-                  <Image 
-                    src={userAvatar} 
+                  <Image
+                    src={userAvatar}
                     alt={userName}
                     width={40}
                     height={40}
@@ -114,21 +116,22 @@ const TopBar: React.FC<TopBarProps> = ({
                   <p className="text-sm font-semibold text-slate-900">{userName}</p>
                   <p className="text-xs text-slate-500 truncate">{user?.email}</p>
                 </div>
-                
+
                 <div className="p-1">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-emerald-700 rounded-lg transition-colors">
-                    <User className="w-4 h-4" />
-                    Profile
-                  </button>
-                  
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-emerald-700 rounded-lg transition-colors">
-                    <Settings className="w-4 h-4" />
-                    Settings
+                  <button
+                    onClick={() => {
+                      setShowResetPasswordModal(true);
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-emerald-700 rounded-lg transition-colors"
+                  >
+                    <Lock className="w-4 h-4" />
+                    Reset Password
                   </button>
                 </div>
-                
+
                 <div className="border-t border-slate-100 p-1 mt-1">
-                  <button 
+                  <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
@@ -141,6 +144,12 @@ const TopBar: React.FC<TopBarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={showResetPasswordModal}
+        onClose={() => setShowResetPasswordModal(false)}
+      />
     </header>
   );
 };

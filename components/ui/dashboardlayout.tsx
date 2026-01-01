@@ -8,9 +8,10 @@ import { useAuth } from '@/contexts/AuthContext';
 interface DashboardLayoutProps {
   children: React.ReactNode;
   userName?: string;
+  isAccountActivated?: boolean;
 }
 
-const DashboardLayout = ({ children, userName }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, userName, isAccountActivated = true }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, loading } = useAuth();
 
@@ -20,7 +21,7 @@ const DashboardLayout = ({ children, userName }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen relative">
-      
+
       {/* Switch sidebars based on role */}
       {user?.role === 'admin' || user?.role === 'superadmin' ? (
         <AdminSidebar
@@ -35,10 +36,11 @@ const DashboardLayout = ({ children, userName }: DashboardLayoutProps) => {
           userAvatar={undefined}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          isAccountActivated={isAccountActivated}
         />
       )}
 
-      <TopBar 
+      <TopBar
         userName={userName || user?.firstName || 'User'}
         userAvatar={undefined}
         onMenuClick={() => setIsSidebarOpen(true)}

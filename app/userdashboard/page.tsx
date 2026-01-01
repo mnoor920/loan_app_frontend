@@ -20,6 +20,7 @@ import type { Step1Data, Step2Data, Step3Data, Step4Data, Step5Data, Step6Data }
 import FastDashboardContent from '../../components/dashboard/FastDashboardContent';
 import NotificationBanner from '../../components/notifications/NotificationBanner';
 import { useActivationStatus } from '../../hooks/useActivationStatus';
+import { useFastDashboard } from '../../hooks/useFastDashboard';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -36,6 +37,12 @@ const Dashboard = () => {
     activationApiError,
     refreshActivationStatus
   } = useActivationStatus(user?.id || null);
+
+  // Check if user has existing loans
+  const { data } = useFastDashboard({
+    userId: user?.id || null,
+    enabled: !!user && isAccountActivated,
+  });
 
   // Handle client-side mounting to prevent hydration errors
   useEffect(() => {
@@ -103,7 +110,7 @@ const Dashboard = () => {
 
   return (
     <ToastProvider>
-      <DashboardLayout userName={displayName}>
+      <DashboardLayout userName={displayName} isAccountActivated={isAccountActivated}>
         {/* Main Content Area with Gradient Background */}
         <div className="min-h-[calc(100vh-80px)]">
           <div className="max-w-7xl mx-auto space-y-8">
@@ -123,7 +130,7 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {isAccountActivated && (
+              {isAccountActivated && (!data || !data.recentLoans || data.recentLoans.length === 0) && (
                 <div className="relative z-10 flex-shrink-0">
                   <button
                     onClick={handleApplyForLoan}
@@ -240,7 +247,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Quick Action Cards */}
-                <div>
+                {/* <div>
                   <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Link
@@ -282,7 +289,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </>
             )}
 

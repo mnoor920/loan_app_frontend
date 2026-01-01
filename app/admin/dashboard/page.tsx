@@ -72,9 +72,8 @@ function StatCard({
       </div>
       {change && (
         <div
-          className={`text-xs sm:text-sm flex items-center gap-1 font-semibold ${
-            isPositive ? "text-emerald-600" : "text-red-600"
-          }`}
+          className={`text-xs sm:text-sm flex items-center gap-1 font-semibold ${isPositive ? "text-emerald-600" : "text-red-600"
+            }`}
         >
           {isPositive ? (
             <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -180,7 +179,7 @@ export default function AdminDashboard() {
 
   // Generate Code Modal State
   const [showCodeModal, setShowCodeModal] = useState(false);
-  const [selectedLoanForCode, setSelectedLoanForCode] = useState<{id: string, name: string} | null>(null);
+  const [selectedLoanForCode, setSelectedLoanForCode] = useState<{ id: string, name: string } | null>(null);
 
   // Enhanced error handling
   const {
@@ -321,7 +320,7 @@ export default function AdminDashboard() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "PKR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -390,11 +389,10 @@ export default function AdminDashboard() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as TabType)}
-                      className={`flex items-center gap-2 py-2 px-1 border-b-2 font-bold text-sm transition-colors ${
-                        activeTab === tab.id
+                      className={`flex items-center gap-2 py-2 px-1 border-b-2 font-bold text-sm transition-colors ${activeTab === tab.id
                           ? "border-emerald-500 text-emerald-600"
                           : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       {tab.label}
@@ -552,12 +550,12 @@ export default function AdminDashboard() {
                         <div
                           className={`w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br ${getAvatarColor(
                             user.profile?.fullName ||
-                              `${user.firstName} ${user.lastName}`
+                            `${user.firstName} ${user.lastName}`
                           )} rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-semibold flex-shrink-0`}
                         >
                           {getInitials(
                             user.profile?.fullName ||
-                              `${user.firstName} ${user.lastName}`
+                            `${user.firstName} ${user.lastName}`
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -621,15 +619,14 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <span
-                            className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
-                              loan.status === "Approved"
+                            className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${loan.status === "Approved"
                                 ? "bg-green-50 text-green-700 border border-green-200"
                                 : loan.status === "Pending Approval"
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : loan.status === "Rejected"
-                                ? "bg-red-50 text-red-700 border border-red-200"
-                                : "bg-blue-50 text-blue-700 border border-blue-200"
-                            }`}
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : loan.status === "Rejected"
+                                    ? "bg-red-50 text-red-700 border border-red-200"
+                                    : "bg-blue-50 text-blue-700 border border-blue-200"
+                              }`}
                           >
                             {loan.status}
                           </span>
@@ -648,14 +645,13 @@ export default function AdminDashboard() {
                           </button>
                           {loan.status === "Approved" && (
                             <button
-                                onClick={(e) => handleGenerateCode(e, loan.id, `${loan.applicant.firstName} ${loan.applicant.lastName}`)}
-                                className={`ml-3 text-xs font-medium transition-colors ${
-                                    loan.hasActiveCode 
-                                    ? "text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
-                                    : "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                              onClick={(e) => handleGenerateCode(e, loan.id, `${loan.applicant.firstName} ${loan.applicant.lastName}`)}
+                              className={`ml-3 text-xs font-medium transition-colors ${loan.hasActiveCode
+                                  ? "text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                                  : "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                                 }`}
                             >
-                                {loan.hasActiveCode ? "Regenerate Code" : "Generate Code"}
+                              {loan.hasActiveCode ? "Regenerate Code" : "Generate Code"}
                             </button>
                           )}
                         </div>
@@ -703,15 +699,14 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-4 lg:px-6 py-3 whitespace-nowrap">
                               <span
-                                className={`px-2 sm:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  loan.status === "Approved"
+                                className={`px-2 sm:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${loan.status === "Approved"
                                     ? "bg-green-50 text-green-700 border border-green-200"
                                     : loan.status === "Pending Approval"
-                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                    : loan.status === "Rejected"
-                                    ? "bg-red-50 text-red-700 border border-red-200"
-                                    : "bg-blue-50 text-blue-700 border border-blue-200"
-                                }`}
+                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                      : loan.status === "Rejected"
+                                        ? "bg-red-50 text-red-700 border border-red-200"
+                                        : "bg-blue-50 text-blue-700 border border-blue-200"
+                                  }`}
                               >
                                 {loan.status}
                               </span>
@@ -727,14 +722,13 @@ export default function AdminDashboard() {
                               </button>
                               {loan.status === "Approved" && (
                                 <button
-                                    onClick={(e) => handleGenerateCode(e, loan.id, `${loan.applicant.firstName} ${loan.applicant.lastName}`)}
-                                    className={`ml-4 font-medium transition-colors ${
-                                        loan.hasActiveCode 
-                                        ? "text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
-                                        : "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                                  onClick={(e) => handleGenerateCode(e, loan.id, `${loan.applicant.firstName} ${loan.applicant.lastName}`)}
+                                  className={`ml-4 font-medium transition-colors ${loan.hasActiveCode
+                                      ? "text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                                      : "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
                                     }`}
                                 >
-                                    {loan.hasActiveCode ? "Regenerate Code" : "Generate Code"}
+                                  {loan.hasActiveCode ? "Regenerate Code" : "Generate Code"}
                                 </button>
                               )}
                             </td>
@@ -759,13 +753,13 @@ export default function AdminDashboard() {
           {/* Loans Tab */}
           {activeTab === "loans" && <LoansList />}
         </div>
-        
+
         {/* Generate Code Modal */}
         <GenerateCodeModal
-            isOpen={showCodeModal}
-            onClose={() => setShowCodeModal(false)}
-            loanId={selectedLoanForCode?.id || null}
-            applicantName={selectedLoanForCode?.name || ''}
+          isOpen={showCodeModal}
+          onClose={() => setShowCodeModal(false)}
+          loanId={selectedLoanForCode?.id || null}
+          applicantName={selectedLoanForCode?.name || ''}
         />
       </DashboardLayout>
     </ErrorBoundary>

@@ -38,7 +38,7 @@ export const validatePakistaniPhone = (phone: string): PhoneValidationResult => 
   // Additional validation for valid Pakistani mobile prefixes
   const validPrefixes = ['030', '031', '032', '033', '034', '035', '036', '037', '038', '039'];
   const prefix = cleanPhone.substring(0, 3);
-  
+
   if (!validPrefixes.includes(prefix)) {
     return { isValid: false, error: 'Please enter a valid Pakistani phone number (03XXXXXXXXX)' };
   }
@@ -51,32 +51,42 @@ export const validatePakistaniPhone = (phone: string): PhoneValidationResult => 
  */
 export const validatePakistaniIBAN = (iban: string): IBANValidationResult => {
   if (!iban || typeof iban !== 'string') {
-    return { isValid: false, error: 'IBAN is required' };
+    return { isValid: false, error: 'IBAN or Account Number is required' };
   }
 
   // Remove spaces and convert to uppercase
   const cleanIBAN = iban.replace(/\s/g, '').toUpperCase();
+  const cleanInput = iban.replace(/\s/g, '');
 
-  // Check if it starts with PK
-  if (!cleanIBAN.startsWith('PK')) {
-    return { isValid: false, error: 'Please enter a valid Pakistani IBAN (e.g., PK36SCBL0000001123456702)' };
+  // Check if it's a Pakistani IBAN (starts with PK)
+  if (cleanIBAN.startsWith('PK')) {
+    // Pakistani IBAN should be 24 characters long
+    if (cleanIBAN.length !== 24) {
+      return { isValid: false, error: 'Please enter a valid Pakistani IBAN (e.g., PK36SCBL0000001123456702) or Account Number' };
+    }
+
+    // Basic IBAN format validation (PK + 2 check digits + 4 bank code + 16 account number)
+    const ibanRegex = /^PK\d{2}[A-Z]{4}\d{16}$/;
+    if (!ibanRegex.test(cleanIBAN)) {
+      return { isValid: false, error: 'Please enter a valid Pakistani IBAN (e.g., PK36SCBL0000001123456702) or Account Number' };
+    }
+
+    // Format IBAN with spaces for display
+    const formattedIBAN = cleanIBAN.replace(/(.{4})/g, '$1 ').trim();
+
+    return { isValid: true, formattedIBAN };
   }
 
-  // Pakistani IBAN should be 24 characters long
-  if (cleanIBAN.length !== 24) {
-    return { isValid: false, error: 'Please enter a valid Pakistani IBAN (e.g., PK36SCBL0000001123456702)' };
+  // If not IBAN, validate as regular account number
+  // Account numbers are typically numeric, 8-20 digits long
+  // Allow alphanumeric for some banks that use account numbers with letters
+  const accountNumberRegex = /^[A-Z0-9]{8,20}$/i;
+  if (!accountNumberRegex.test(cleanInput)) {
+    return { isValid: false, error: 'Please enter a valid Account Number (8-20 alphanumeric characters) or IBAN' };
   }
 
-  // Basic IBAN format validation (PK + 2 check digits + 4 bank code + 16 account number)
-  const ibanRegex = /^PK\d{2}[A-Z]{4}\d{16}$/;
-  if (!ibanRegex.test(cleanIBAN)) {
-    return { isValid: false, error: 'Please enter a valid Pakistani IBAN (e.g., PK36SCBL0000001123456702)' };
-  }
-
-  // Format IBAN with spaces for display
-  const formattedIBAN = cleanIBAN.replace(/(.{4})/g, '$1 ').trim();
-
-  return { isValid: true, formattedIBAN };
+  // Return the cleaned account number (no formatting needed)
+  return { isValid: true, formattedIBAN: cleanInput };
 };
 
 /**
