@@ -28,6 +28,7 @@ import {
 import ApproveLoanModal from './ApproveLoanModal';
 import WalletModificationModal from './WalletModificationModal';
 import GenerateCodeModal from './GenerateCodeModal';
+import ChangeStatusModal from './ChangeStatusModal';
 
 interface UserActivationProfile {
   id: string;
@@ -76,7 +77,7 @@ interface LoanApplicationWithUser {
   interestRate: number;
   monthlyPayment: number;
   totalAmount: number;
-  status: 'Pending Approval' | 'Approved' | 'In Repayment' | 'Completed' | 'Rejected';
+  status: 'Pending Approval' | 'Approved' | 'In Repayment' | 'Completed' | 'Rejected' | 'Review' | 'Pending' | 'Reject' | 'On hold';
   loanPurpose: string;
   applicationDate: string;
   approvalDate?: string;
@@ -129,6 +130,7 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showWalletCodeModal, setShowWalletCodeModal] = useState(false);
+  const [showChangeStatusModal, setShowChangeStatusModal] = useState(false);
   const [walletCodeUserId, setWalletCodeUserId] = useState<string | null>(null);
   const [walletCodeUserName, setWalletCodeUserName] = useState<string>('');
   const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | 'save' | null>(null);
@@ -286,6 +288,45 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
     } catch (error: any) {
       console.error('Error approving loan:', error);
       setError(error.message || 'Failed to approve loan');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle status change
+  const handleStatusChange = async (newStatus: string, note: string) => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const response = await fetch(`/api/admin/loans/${loanId}/change-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: newStatus,
+          adminNote: note
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setLoan(data.loan);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+        // Refresh loan data
+        await fetchLoan();
+      } else {
+        setError(data.message || 'Failed to update loan status');
+        throw new Error(data.message || 'Failed to update loan status');
+      }
+    } catch (error: any) {
+      console.error('Error changing loan status:', error);
+      setError(error.message || 'Failed to update loan status');
+      throw error;
     } finally {
       setSaving(false);
     }
@@ -470,6 +511,52 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
     });
   };
 
+  // Parse admin notes into timeline entries
+  const parseAdminNotesTimeline = (notes: string): Array<{ date: string; status: string; note: string }> => {
+    if (!notes) return [];
+
+    // Split by double newlines to get individual entries
+    const entries = notes.split(/\n\n+/).filter(entry => entry.trim());
+
+    return entries.map(entry => {
+      // Match pattern: [date] Status changed to status: note
+      const match = entry.match(/\[([^\]]+)\]\s*Status changed to\s+(.+?):\s*(.+)/);
+
+      if (match) {
+        const [, dateStr, status, note] = match;
+        // Format the date nicely
+        let formattedDate = dateStr;
+        try {
+          const date = new Date(dateStr);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+        } catch (e) {
+          // Keep original if parsing fails
+        }
+
+        return {
+          date: formattedDate,
+          status: status.trim(),
+          note: note.trim()
+        };
+      }
+
+      // If it doesn't match the pattern, treat as a regular note
+      return {
+        date: 'Unknown date',
+        status: 'Note',
+        note: entry.trim()
+      };
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     const baseClasses = "px-3 py-1 inline-flex text-sm font-semibold rounded-full";
     switch (status) {
@@ -483,6 +570,14 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
         return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300`;
       case 'Rejected':
         return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300`;
+      case 'Review':
+        return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300`;
+      case 'Pending':
+        return `${baseClasses} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300`;
+      case 'Reject':
+        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300`;
+      case 'On hold':
+        return `${baseClasses} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300`;
     }
@@ -658,13 +753,13 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
                   </button>
                 </>
               )}
-              <button
+              {/* <button 
                 onClick={() => setIsEditing(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Edit3 className="w-4 h-4" />
                 Edit Details
-              </button>
+              </button> */}
             </>
           ) : (
             <>
@@ -716,9 +811,20 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
 
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Status</div>
-                <span className={getStatusBadge(loan.status)}>
-                  {loan.status}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={getStatusBadge(loan.status)}>
+                    {loan.status}
+                  </span>
+                  {/* Show Change Status button for approved loans and any status after approval */}
+                  {loan.status !== 'Pending Approval' && loan.status !== 'Rejected' && loan.status !== 'Completed' && (
+                    <button
+                      onClick={() => setShowChangeStatusModal(true)}
+                      className="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    >
+                      Change Status
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -975,8 +1081,42 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                   ) : (
-                    <div className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-[120px]">
-                      {loan.adminNotes || 'No notes added yet.'}
+                    <div className="px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 min-h-[120px]">
+                      {loan.adminNotes ? (() => {
+                        const timelineEntries = parseAdminNotesTimeline(loan.adminNotes || '');
+                        return (
+                          <div className="space-y-4">
+                            {timelineEntries.map((entry, index) => (
+                              <div key={index} className="flex gap-4">
+                                {/* Timeline line */}
+                                <div className="flex flex-col items-center">
+                                  <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mt-1.5"></div>
+                                  {index < timelineEntries.length - 1 && (
+                                    <div className="w-0.5 h-full bg-gray-300 dark:bg-gray-600 mt-2 min-h-[40px]"></div>
+                                  )}
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-1 pb-4">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                      {entry.date}
+                                    </span>
+                                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                      {entry.status}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                                    {entry.note}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })() : (
+                        <p className="text-gray-500 dark:text-gray-400">No notes added yet.</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1422,6 +1562,20 @@ export default function LoanDetailView({ loanId }: LoanDetailViewProps) {
             durationMonths: loan.durationMonths,
             interestRate: loan.interestRate
           }}
+          loading={saving}
+        />
+      )}
+
+      {/* Change Status Modal */}
+      {loan && (
+        <ChangeStatusModal
+          isOpen={showChangeStatusModal}
+          onClose={() => {
+            setShowChangeStatusModal(false);
+            setError(null);
+          }}
+          currentStatus={loan.status}
+          onStatusChange={handleStatusChange}
           loading={saving}
         />
       )}

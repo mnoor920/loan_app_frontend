@@ -86,10 +86,9 @@ export default function RecentLoans({ loans, loading, onRefresh, onLoanClick }: 
             {loans.map((loan) => (
               <div
                 key={loan.id}
-                onClick={() => onLoanClick?.(loan.id)}
-                className={`flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${
-                  onLoanClick ? 'cursor-pointer' : ''
-                }`}
+                // onClick={() => onLoanClick?.(loan.id)}
+                className={`flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${onLoanClick ? 'cursor-pointer' : ''
+                  }`}
               >
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">

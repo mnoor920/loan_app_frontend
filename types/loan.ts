@@ -5,7 +5,11 @@ export type LoanStatus =
   | 'Approved' 
   | 'In Repayment' 
   | 'Completed' 
-  | 'Rejected';
+  | 'Rejected'
+  | 'Review'
+  | 'Pending'
+  | 'Reject'
+  | 'On hold';
 
 // Main loan interface representing a loan record in the database
 export interface Loan {
