@@ -84,8 +84,9 @@ const Dashboard = () => {
   const handleStep6Next = async () => {
     // All steps complete - activate account
     await refreshActivationStatus();
-    setShowActivationFlow(false);
+    // setShowActivationFlow(false);
     // Force reload to ensure all states sync
+    router.push('/loan');
     window.location.reload();
   };
 

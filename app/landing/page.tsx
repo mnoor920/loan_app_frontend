@@ -1,11 +1,59 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, ArrowRight, Shield, Clock, Percent, ChevronRight, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Menu, X, ArrowRight, Shield, Clock, Percent, ChevronRight, Star, ChevronDown, LogOut, LayoutDashboard } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LandingPage() {
   const [open, setOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { user, logout, loading } = useAuth();
+  const router = useRouter();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user) return '';
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) return user.firstName;
+    return user.email.split('@')[0];
+  };
+
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+    router.push('/login');
+  };
+
+  const handleDashboardClick = () => {
+    setShowUserMenu(false);
+    if (user?.role === 'admin' || user?.role === 'superadmin') {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/userdashboard');
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-white font-sans text-slate-900">
@@ -37,19 +85,72 @@ export default function LandingPage() {
             ))}
           </nav>
 
-          {/* Desktop Buttons */}
+          {/* Desktop Buttons / User Menu */}
           <div className="hidden lg:flex items-center gap-4">
-            <Link href="/login" passHref>
-              <button className="text-sm font-semibold text-emerald-800 hover:text-emerald-950 transition-colors">
-                Sign In
-              </button>
-            </Link>
-            <Link href="/signup" passHref>
-              <button className="flex items-center gap-2 rounded-full px-6 py-2.5 bg-emerald-700 text-white text-sm font-semibold shadow-lg shadow-emerald-600/20 hover:bg-emerald-800 hover:shadow-emerald-600/30 hover:-translate-y-0.5 transition-all duration-300">
-                Get Started
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
+            {loading ? (
+              <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+            ) : user ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-3 hover:bg-emerald-50 rounded-xl px-4 py-2 transition-colors border border-transparent hover:border-emerald-200"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                    <span className="text-sm font-bold text-white">
+                      {getInitials(getUserDisplayName())}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-800">
+                    {getUserDisplayName()}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-emerald-600" />
+                </button>
+
+                {/* User Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <p className="text-sm font-semibold text-slate-900">{getUserDisplayName()}</p>
+                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                    </div>
+
+                    <div className="p-1">
+                      <button
+                        onClick={handleDashboardClick}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Dashboard
+                      </button>
+                    </div>
+
+                    <div className="border-t border-slate-100 p-1 mt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link href="/login" passHref>
+                  <button className="text-sm font-semibold text-emerald-800 hover:text-emerald-950 transition-colors">
+                    Sign In
+                  </button>
+                </Link>
+                <Link href="/signup" passHref>
+                  <button className="flex items-center gap-2 rounded-full px-6 py-2.5 bg-emerald-700 text-white text-sm font-semibold shadow-lg shadow-emerald-600/20 hover:bg-emerald-800 hover:shadow-emerald-600/30 hover:-translate-y-0.5 transition-all duration-300">
+                    Get Started
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -69,18 +170,45 @@ export default function LandingPage() {
                 {item}
               </a>
             ))}
-            <div className="flex flex-col gap-3 mt-2">
-              <Link href="/login" className="w-full">
-                <button className="w-full py-3 rounded-lg border border-emerald-200 text-emerald-800 font-semibold hover:bg-emerald-50">
-                  Sign In
+            {loading ? (
+              <div className="flex justify-center py-4">
+                <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : user ? (
+              <div className="flex flex-col gap-3 mt-2">
+                <div className="px-4 py-3 border-b border-gray-100 mb-2">
+                  <p className="text-sm font-semibold text-slate-900">{getUserDisplayName()}</p>
+                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                </div>
+                <button
+                  onClick={handleDashboardClick}
+                  className="w-full py-3 rounded-lg border border-emerald-200 text-emerald-800 font-semibold hover:bg-emerald-50 flex items-center justify-center gap-2"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
                 </button>
-              </Link>
-              <Link href="/signup" className="w-full">
-                <button className="w-full py-3 rounded-lg bg-emerald-700 text-white font-semibold hover:bg-emerald-800 shadow-md">
-                  Get Started
+                <button
+                  onClick={handleLogout}
+                  className="w-full py-3 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 shadow-md flex items-center justify-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
                 </button>
-              </Link>
-            </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 mt-2">
+                <Link href="/login" className="w-full">
+                  <button className="w-full py-3 rounded-lg border border-emerald-200 text-emerald-800 font-semibold hover:bg-emerald-50">
+                    Sign In
+                  </button>
+                </Link>
+                <Link href="/signup" className="w-full">
+                  <button className="w-full py-3 rounded-lg bg-emerald-700 text-white font-semibold hover:bg-emerald-800 shadow-md">
+                    Get Started
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </header>

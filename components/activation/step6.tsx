@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { useActivation } from '../../contexts/ActivationContext';
-
+import { useRouter } from 'next/navigation';
 interface Step6Props {
   onFinish: () => void;
   onBack: () => void;
@@ -10,6 +10,7 @@ interface Step6Props {
 }
 
 const Step6: React.FC<Step6Props> = ({ onFinish, onBack, onClose }) => {
+  const router = useRouter();
   const { updateStepData, clearData } = useActivation();
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [error, setError] = useState('');
@@ -24,18 +25,18 @@ const Step6: React.FC<Step6Props> = ({ onFinish, onBack, onClose }) => {
       setError('Please provide your signature');
       return;
     }
-    
+
     // Get signature data
     const signatureData = sigCanvas.current?.toDataURL();
-    
+
     // Save signature data
     updateStepData(6, { signature: signatureData });
-    
+
     // Clear all activation data after successful completion
     setTimeout(() => {
       clearData();
     }, 1000);
-    
+    router.push('/loan');
     onFinish();
   };
 
